@@ -300,8 +300,8 @@ int main()
                 if (data != NULL && data_len > 0) {
                     char * filename = bb_cgi_get_var(req.q_vars, "media_upload.filename");
                     FILE *out;
-                    char filepath[500];
-                    snprintf(filepath, sizeof(filepath), "%s/%s", req.image_dir, filename);
+                    char filepath[1024];
+                    snprintf(filepath, sizeof(filepath)-1, "%s/%s", req.image_dir, filename);
                     out = fopen(filepath, "wb+");
                     fwrite(data, 1, data_len, out);
                     fclose(out);
@@ -313,8 +313,8 @@ int main()
                 // Handle settings delete
                 char * filename = bb_cgi_get_var(req.q_vars, "media_delete");
                 if (filename != NULL) {
-                    char filepath[500];
-                    snprintf(filepath, sizeof(filepath), "%s/%s", req.image_dir, filename);
+                    char filepath[1024];
+                    snprintf(filepath, sizeof(filepath)-1, "%s/%s", req.image_dir, filename);
                     if (!remove(filepath)) {
                         printf("Successful :)<br>");
                     } else {
