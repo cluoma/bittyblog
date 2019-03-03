@@ -9,10 +9,26 @@ sqlite3 bittyblog.db "INSERT INTO pages (name_id, name, style) VALUES ('blog', '
 sqlite3 bittyblog.db "INSERT INTO posts (page_id, title, time, text, byline, visible) VALUES (1, 'Your First Post', 1551632315, 'Here is where your blog post text would go.', 'Describe your blog post in one sentence', 1), (2, 'Contact', 1551632315, 'Tell your readers where to contact you', '', 1);"
 
 echo Database created
-echo Create an administrator
+echo Create an administrator account
 echo Username:
 read username
 echo Password:
 read password
 
 sqlite3 bittyblog.db "INSERT INTO users (email, password) VALUES ('$username','$password');"
+
+echo .. Creating docroot
+mkdir www
+mkdir www/cgi-bin
+echo .. Compiling bittyblog
+sed -i "s@~@${PWD}@g" bittyblog/config.h
+make all
+echo .. Copying executables
+mv bb.cgi www/cgi-bin/bb.cgi
+mv bbadmin.cgi www/cgi-bin/bbadmin.cgi
+echo .. Copying fonts, images, and css
+cp -r fonts www/
+cp -r css www/
+cp -r images www/
+
+echo Setup complete. Please configure your webserver.
