@@ -23,3 +23,4 @@ Code and inspiration from the following projects:
  * [magnum](https://github.com/fletcher/magnum)
  * [qdecoder](https://github.com/wolkykim/qdecoder)
  * [tinydir](https://github.com/cxong/tinydir)
+ * [bootstrap](https://getbootstrap.com/docs/3.4/css/)
