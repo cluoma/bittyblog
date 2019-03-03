@@ -360,9 +360,9 @@ int main()
 
     }
 
-
-
-    DString *template = scan_file("/home/colin/Documents/bittyblog_m/templates/admin.m");
+    char dir_base[1024];
+    snprintf(dir_base, 1023, "%s/admin.m", TEMPLATE_PATH);
+    DString *template = scan_file(dir_base);
     DString * out = d_string_new("");
     magnum_populate_from_json(template, root_value, out, ".", NULL);
 

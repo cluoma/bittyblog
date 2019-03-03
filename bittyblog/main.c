@@ -53,17 +53,22 @@ int main()
     // Load the currect template file, based on page style
     DString *template;
     switch(req.page->style) {
+        char dir_base[1024];
         case BLOG_FULL_POST:
-            template = scan_file("/home/colin/Documents/bittyblog_m/templates/blog.m");
+            snprintf(dir_base, 1023, "%s/blog.m", TEMPLATE_PATH);
+            template = scan_file(dir_base);
             break;
         case BLOG_SMALL_POST:
-            template = scan_file("/home/colin/Documents/bittyblog_m/templates/blog_preview.m");
+            snprintf(dir_base, 1023, "%s/blog_preview.m", TEMPLATE_PATH);
+            template = scan_file(dir_base);
             break;
         case CONTACT:
-            template = scan_file("/home/colin/Documents/bittyblog_m/templates/contact.m");
+            snprintf(dir_base, 1023, "%s/contact.m", TEMPLATE_PATH);
+            template = scan_file(dir_base);
             break;
         default:
-            template = scan_file("/home/colin/Documents/bittyblog_m/templates/blog.m");
+            snprintf(dir_base, 1023, "%s/blog.m", TEMPLATE_PATH);
+            template = scan_file(dir_base);
             break;
     }
 
