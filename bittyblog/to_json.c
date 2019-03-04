@@ -102,7 +102,7 @@ void bb_posts_to_json(JSON_Object *root_object, bb_page_request *req, int format
 
         // Set default thumbnail if we didn't get one from the database
         if (entries->p[i].thumbnail == NULL || strcmp(entries->p[i].thumbnail, "") == 0) {
-            json_object_set_string(json_value_get_object(tmp_post), "thumbnail", "bb_default.thumbnail.png");
+            json_object_set_string(json_value_get_object(tmp_post), "thumbnail", "bb_default.thumbnail.jpg");
         } else {
             json_object_set_string(json_value_get_object(tmp_post), "thumbnail", entries->p[i].thumbnail);
         }
