@@ -7040,13 +7040,14 @@ h6, .h6 {
     border-color: #428bca;
     border-width: 2px;
     padding: 10px;
-    margin-top: 15px;
+    margin-bottom: 15px;
     font-size: 15px;
     overflow: auto;
 }
 .blog-post-preview-img {
     float: right;
     object-fit: cover;
+    object-position: 50% 50%;
     height: 200px;
     width: 200px;
     margin: -8px;
@@ -7055,6 +7056,16 @@ h6, .h6 {
 .blog-post-preview-title {
     margin-bottom: 5px;
     font-size: 28px;
+}
+
+@media screen and (max-width: 450px) {
+    .blog-post-preview-img {
+        float: none;
+        margin: -8px;
+        margin-bottom: 6px;
+        width: calc(100% + 16px);
+        height: calc(width * 0.5625);
+    }
 }
 
 /*
