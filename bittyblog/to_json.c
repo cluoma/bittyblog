@@ -116,6 +116,17 @@ void bb_posts_to_json(JSON_Object *root_object, bb_page_request *req, int format
             json_object_set_string(json_value_get_object(tmp_post), "text", entries->p[i].text);
         }
 
+        // Add an array of tags to the post
+        bb_vec *tags = entries->p[i].tags;
+        if (tags != NULL) {
+            JSON_Array *json_tags = json_value_get_array(json_value_init_array());
+            for (int j = 0; j < bb_vec_count(tags); j++) {
+                json_array_append_string(json_tags, (char*)bb_vec_get(tags, j));
+            }
+            json_object_set_value(json_value_get_object(tmp_post), "tags", json_array_get_wrapping_value(json_tags));
+        }
+
+        // Append post to the array of posts
         json_array_append_value(posts, tmp_post);
     }
     json_object_set_value(root_object, "posts", json_array_get_wrapping_value(posts));

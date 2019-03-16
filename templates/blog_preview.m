@@ -98,9 +98,6 @@
     {{/newer}}
     </ul></nav>
 {{/nav_buttons}}
-{{^nav_buttons}}
-<br><br>
-{{/nav_buttons}}
 
 </div>
 

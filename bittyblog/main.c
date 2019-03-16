@@ -24,7 +24,7 @@
 
 int main()
 {
-    //for (int i =0; i < 100000; i++) {
+    //for (int i =0; i < 10000; i++) {
     // Init page request
     bb_page_request req;
     bb_init(&req, PARSE_GET);

@@ -48,6 +48,10 @@ sqlite3 *open_database()
     }
 }
 
+/*
+ *  Execute query function takes arguments to prepare a statement then
+ *  executes the query. A callback must be provided to deal with the results
+ */
 int execute_query(void (*callback)(sqlite3_stmt*, void*), void* data,
                   const char* query, const char* types, ...) {
     sqlite3 *db;
@@ -97,10 +101,10 @@ int execute_query(void (*callback)(sqlite3_stmt*, void*), void* data,
     return 1;
 }
 
+// Load post data from database
 void load_posts_cb(sqlite3_stmt *results, void* data) {
     vector_p *vp = (vector_p*)data;
 
-    // Execute statement
     while(sqlite3_step(results) == SQLITE_ROW)
     {
         // Realloc memory for a new post
@@ -152,6 +156,15 @@ void load_posts_cb(sqlite3_stmt *results, void* data) {
             } else if (strcmp(col_name, "visible") == 0) {
                 post[n].visible = sqlite3_column_int(results, i);
             }
+            else if (strcmp(col_name, "tags") == 0) {
+                if (sqlite3_column_type(results, i) != SQLITE_NULL) {
+                    const char *tags = (char *) sqlite3_column_text(results, i);
+                    post[n].tags = tokenize_tags(tags, ",");
+                    for (int j = 0; j < bb_vec_count(post[n].tags); j++) {
+                        fprintf(stderr, "TAGE:: %s\n", (char*)bb_vec_get(post[n].tags, j));
+                    }
+                }
+            }
         }
         vp->p = post;
         vp->n ++;
@@ -174,7 +187,6 @@ vector_p * db_nsearch(char* page_name_id, char *keyword, int count, int offset)
                 "ssii", page_name_id, keyword, count, offset);
     return all_posts;
 }
-
 vector_p * db_monthyear(char* page_name_id, int month, int year)
 {
     vector_p * all_posts = vector_p_new();
@@ -183,7 +195,6 @@ vector_p * db_monthyear(char* page_name_id, int month, int year)
                 "sii", page_name_id,  month, year);
     return all_posts;
 }
-
 vector_p * db_nposts(char* page_name_id, int count, int offset)
 {
     vector_p * all_posts = vector_p_new();
@@ -192,7 +203,6 @@ vector_p * db_nposts(char* page_name_id, int count, int offset)
                 "sii", page_name_id,  count, offset);
     return all_posts;
 }
-
 vector_p * db_id(int id)
 {
     vector_p * all_posts = vector_p_new();
@@ -202,6 +212,7 @@ vector_p * db_id(int id)
     return all_posts;
 }
 
+// Get the number of posts
 void db_count_cb(sqlite3_stmt* st, void* a) {
     while(sqlite3_step(st) == SQLITE_ROW)
     {
@@ -237,6 +248,7 @@ int db_search_count(char* page_name_id, char* keyword) {
     return 0;
 }
 
+// Get list of Pages from database
 void db_pages_cb(sqlite3_stmt* st, void* a) {
     bb_vec *pages = (bb_vec*)a;
     while(sqlite3_step(st) == SQLITE_ROW)
@@ -258,10 +270,16 @@ void db_pages_cb(sqlite3_stmt* st, void* a) {
         bb_vec_add(pages, page);
     }
 }
+void db_pages_free_cb(void *d) {
+    bb_page *page = (bb_page *)d;
+    free(page->name);
+    free(page->id_name);
+    free(page);
+}
 bb_vec * db_pages()
 {
     bb_vec *pages = malloc(sizeof(bb_vec));
-    bb_vec_init(pages);
+    bb_vec_init(pages, db_pages_free_cb);
 
     execute_query(db_pages_cb, pages, LOAD_PAGES, "");
 
@@ -285,6 +303,80 @@ vector_p * db_admin_id(int id) {
                 ADMIN_POST_ID_QUERY,
                 "i", id);
     return all_posts;
+}
+
+int db_update_tags(Post *p) {
+    int rc;
+    sqlite3_stmt *results;
+    bb_vec *tags = p->tags;
+
+    if (bb_vec_count(tags) < 1) return 1;
+
+    /* Update Tags table */
+    // Build query string, max 20 tags
+    char sql[150]; sql[0] = '\0';
+    strcat(sql, "INSERT OR IGNORE INTO tags (tag) VALUES");
+    for (int i = 0; i < 20 && i < bb_vec_count(tags); i++) {
+        strcat(sql, "(?)");
+        if (i+1 < 20 && i+1 < bb_vec_count(tags)) strcat(sql, ",");
+    }
+
+    /* Connect to DB */
+    sqlite3 *db = open_database();
+    if (db == NULL) {
+        fprintf(stderr, "Failed to open DB connection.\n");
+        return 0;
+    }
+
+    /* Prepare sql statement */
+    rc = sqlite3_prepare_v2(db, sql, -1, &results, 0);
+
+    // Bind input data to sql statement
+    if (rc != SQLITE_OK) {
+        fprintf(stderr, "Failed to update table: %s\n", sqlite3_errmsg(db));
+        return 0;
+    }
+    // Bind all tags to prepared statement
+    for (int i = 0; i < 20 && i < bb_vec_count(tags); i++) {
+        sqlite3_bind_text(results, i+1, (char*)bb_vec_get(tags, i), (int)strlen((char*)bb_vec_get(tags, i)), SQLITE_TRANSIENT);
+    }
+    // Execute statement
+    sqlite3_step(results);
+    // Free statement, close DB
+    sqlite3_finalize(results);
+
+    /* Update relationship table */
+    // Delete old relationships
+    sql[0] = '\0';
+    strcat(sql, "DELETE FROM tags_relate WHERE post_id = ?");
+    rc = sqlite3_prepare_v2(db, sql, -1, &results, 0);
+    sqlite3_bind_int(results, 1, p->p_id);
+    // Execute statement
+    sqlite3_step(results);
+    // Free statement, close DB
+    sqlite3_finalize(results);
+
+    // Insert new relationships
+    sql[0] = '\0';
+    strcat(sql, "INSERT OR IGNORE INTO tags_relate (tag_id, post_id) SELECT id, (SELECT id FROM posts WHERE id = ? LIMIT 1) FROM tags WHERE tag IN (");
+    for (int i = 0; i < 20 && i < bb_vec_count(tags); i++) {
+        strcat(sql, "?");
+        if (i+1 < 20 && i+1 < bb_vec_count(tags)) strcat(sql, ",");
+    }
+    strcat(sql, ")");
+    rc = sqlite3_prepare_v2(db, sql, -1, &results, 0);
+    sqlite3_bind_int(results, 1, p->p_id);
+    for (int i = 0; i < 20 && i < bb_vec_count(tags); i++) {
+        sqlite3_bind_text(results, i+2, (char*)bb_vec_get(tags, i), (int)strlen((char*)bb_vec_get(tags, i)), SQLITE_TRANSIENT);
+    }
+    // Execute statement
+    sqlite3_step(results);
+    // Free statement, close DB
+    sqlite3_finalize(results);
+
+    sqlite3_close(db);
+
+    return 1;
 }
 
 int db_update_post(Post *p) {
@@ -323,6 +415,9 @@ int db_update_post(Post *p) {
    // Free statement, close DB
    sqlite3_finalize(results);
    sqlite3_close(db);
+
+   // Update tags
+   db_update_tags(p);
 
    return 1;
 }
@@ -502,6 +597,7 @@ void Post_init(Post* p) {
     p->extra = NULL;
     p->thumbnail = NULL;
     p->visible = 0;
+    p->tags = NULL;
 }
 
 vector_p * vector_p_new()
@@ -533,6 +629,7 @@ void vector_p_free(vector_p *vp)
         if (vp->p[i].byline != NULL) free(vp->p[i].byline);
         if (vp->p[i].extra != NULL) free(vp->p[i].extra);
         if (vp->p[i].thumbnail != NULL) free(vp->p[i].thumbnail);
+        if (vp->p[i].tags != NULL) bb_vec_free(vp->p[i].tags);
     }
     free( vp->p );
     free( vp );

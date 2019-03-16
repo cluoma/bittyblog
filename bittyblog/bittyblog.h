@@ -64,5 +64,6 @@ void bb_free(bb_page_request *);
 
 void bb_load_posts(bb_page_request *);
 bb_vec * bb_image_list(bb_page_request *);
+bb_vec * tokenize_tags(const char *str, const char * delim);
 
 #endif /* bittyblog_h */

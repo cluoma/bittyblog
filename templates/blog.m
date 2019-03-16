@@ -60,6 +60,7 @@
             <a href="{{script_name}}?page={{page_name}}&id={{p_id}}"><h2 class="blog-post-title">{{title}}</h2></a>
             <p class="blog-post-meta">{{time}}</p>
             <p>{{&text}}</p>
+            <p><b>Tags:</b> {{#tags}}<a href="{{script_name}}?tag={{.}}">{{.}}</a> {{/tags}}</p>
             </div>
             {{/posts}}
     </div>

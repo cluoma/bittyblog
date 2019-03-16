@@ -39,5 +39,8 @@ char * newline_to_html(const char* string);     // Changes all '\n' characters i
 char *url_encode(char *str);                    // Encodes URL returns a url-decoded version of str
 char * html_escape(char *str, size_t len);      // Sanitizes text for use in HTML
 unsigned long hash(unsigned char *str);         // djb2 hash function
+char *strtrim(char *str);                       // Removes leading and trailing: spaces, tabs, carriage ret, and newlines
+
+int valid_file(char *buf);
 
 #endif /* cgi_h */

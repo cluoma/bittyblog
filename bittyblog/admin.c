@@ -79,12 +79,10 @@ void edit_post(JSON_Object *root_object, bb_page_request* req, int p_id) {
                 json_object_set_boolean(json_value_get_object(tmp), "selected", 0);
             }
             json_array_append_value(images, tmp);
-            free(bb_vec_get(image_list, i));
         }
         json_object_set_value(root_object, "images", json_array_get_wrapping_value(images));
     }
     bb_vec_free(image_list);
-    free(image_list);
 
     // Add pages to JSON
     JSON_Array *pages = json_value_get_array(json_value_init_array());
@@ -116,12 +114,10 @@ void new_post(JSON_Object *root_object, bb_page_request* req) {
                 json_object_set_string(json_value_get_object(tmp), "filename", (char*)bb_vec_get(image_list, i));
                 json_object_set_boolean(json_value_get_object(tmp), "selected", 0);
             json_array_append_value(images, tmp);
-            free(bb_vec_get(image_list, i));
         }
         json_object_set_value(root_object, "images", json_array_get_wrapping_value(images));
     }
     bb_vec_free(image_list);
-    free(image_list);
 
     // Add pages to JSON
     JSON_Array *pages = json_value_get_array(json_value_init_array());
@@ -178,6 +174,10 @@ void fill_post(bb_page_request *req, Post *p) {
     if (bb_cgi_get_var(req->q_vars, "post_thumbnail") != NULL) {
         p->thumbnail = bb_cgi_get_var(req->q_vars, "post_thumbnail");
     } else {p->thumbnail = NULL;}
+    // Tags
+    if (bb_cgi_get_var(req->q_vars, "post_tags") != NULL) {
+        p->tags = tokenize_tags(bb_cgi_get_var(req->q_vars, "post_tags"), ",");
+    } else {p->tags = NULL;}
 }
 
 void media_to_json(JSON_Object *root_object, bb_page_request* req) {
@@ -189,12 +189,10 @@ void media_to_json(JSON_Object *root_object, bb_page_request* req) {
             JSON_Value *tmp = json_value_init_object();
             json_object_set_string(json_value_get_object(tmp), "filename", (char*)bb_vec_get(image_list, i));
             json_array_append_value(images, tmp);
-            free(bb_vec_get(image_list, i));
         }
         json_object_set_value(root_object, "images", json_array_get_wrapping_value(images));
     }
     bb_vec_free(image_list);
-    free(image_list);
 }
 
 int main()
@@ -216,6 +214,8 @@ int main()
         snprintf(s, 20, "%x", rand());
         set_user_session(username, password, s);
         printf("Refresh: 0;url=%s?sid=%s\r\n\r\n", req.script_name, s);
+        // printf("Status: 303 See Other\r\n");
+        // printf("Location: %s?sid=%s\r\n\r\n", req.script_name, s);
         bb_free(&req);
         return 0;
     }
@@ -268,6 +268,7 @@ int main()
             fill_post(&req, &p);
             if (strcmp(action, "update") == 0) {
                 db_update_post(&p);
+                bb_vec_free(p.tags);
                 printf("Successful :)<br>");
             } else if (strcmp(action, "new") == 0) {
                 db_new_post(&p);
@@ -303,6 +304,11 @@ int main()
                     char filepath[1024];
                     snprintf(filepath, sizeof(filepath)-1, "%s/%s", req.image_dir, filename);
                     out = fopen(filepath, "wb+");
+                    // fprintf(stderr, "0x%x ", data[0]);
+                    // fprintf(stderr, "0x%x ", data[1]);
+                    // fprintf(stderr, "0x%x ", data[2]);
+                    // fprintf(stderr, "0x%x ", data[3]);
+                    // if (valid_file(data)) printf("Awesome!<br>");
                     fwrite(data, 1, data_len, out);
                     fclose(out);
                     printf("Successful :)<br>");

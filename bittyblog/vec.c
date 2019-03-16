@@ -12,11 +12,12 @@
 #include <math.h>
 #include "vec.h"
 
-void bb_vec_init(bb_vec* vec)
+void bb_vec_init(bb_vec* vec, void* f)
 {
     vec->size = 0;
     vec->count = 0;
     vec->data = NULL;
+    vec->f = f;
 }
 
 int bb_vec_count(bb_vec* vec)
@@ -49,5 +50,15 @@ void* bb_vec_get(bb_vec* vec, int i)
 
 void bb_vec_free(bb_vec* vec)
 {
+    for (int i = 0; i < vec->count; i++)
+    {
+        if (vec->f == NULL)
+        {
+            free(vec->data[i]);
+        } else {
+            vec->f(vec->data[i]);
+        }
+    }
     free(vec->data);
+    free(vec);
 }

@@ -367,46 +367,46 @@ char * newline_to_html(const char* string)
 
     int pre_tags_open = 0;
     int new_index = 0;
-    // int state = 0;
-    // int state2 = 0;
+    int state = 0;
+    int state2 = 0;
     for (int old_index = 0; old_index < length; old_index++) {
 
         // Test if we're inside a <pre> tag
-        if (old_index < length - 5 && strncmp(string+old_index, "<pre", 4) == 0)
-        {
-            pre_tags_open++;
-        }
-        else if (old_index < length - 6 && strncmp(string+old_index, "</pre>", 6) == 0)
-        {
-            pre_tags_open--;
-        }
+        // if (old_index < length - 5 && strncmp(string+old_index, "<pre", 4) == 0)
+        // {
+        //     pre_tags_open++;
+        // }
+        // else if (old_index < length - 6 && strncmp(string+old_index, "</pre>", 6) == 0)
+        // {
+        //     pre_tags_open--;
+        // }
 
-        // switch (state) {
-        //     case 0: if (string[old_index] == '<') {state = 1;} else {state = 0;}
-        //         break;
-        //     case 1: if (string[old_index] == 'p') {state = 2;} else {state = 0;}
-        //         break;
-        //     case 2: if (string[old_index] == 'r') {state = 3;} else {state = 0;}
-        //         break;
-        //     case 3: if (string[old_index] == 'e') {pre_tags_open++;}
-        //     default:
-        //         state = 0;
-        // }
-        // switch (state2) {
-        //     case 0: if (string[old_index] == '<') {state2 = 1;} else {state2 = 0;}
-        //         break;
-        //     case 1: if (string[old_index] == '/') {state2 = 2;} else {state2 = 0;}
-        //         break;
-        //     case 2: if (string[old_index] == 'p') {state2 = 3;} else {state2 = 0;}
-        //         break;
-        //     case 3: if (string[old_index] == 'r') {state2 = 4;} else {state2 = 0;}
-        //         break;
-        //     case 4: if (string[old_index] == 'e') {state2 = 5;} else {state2 = 0;}
-        //         break;
-        //     case 5: if (string[old_index] == '>') {pre_tags_open--;}
-        //     default:
-        //         state2 = 0;
-        // }
+        switch (state) {
+            case 0: if (string[old_index] == '<') {state = 1;} else {state = 0;}
+                break;
+            case 1: if (string[old_index] == 'p') {state = 2;} else {state = 0;}
+                break;
+            case 2: if (string[old_index] == 'r') {state = 3;} else {state = 0;}
+                break;
+            case 3: if (string[old_index] == 'e') {pre_tags_open++;}
+            default:
+                state = 0;
+        }
+        switch (state2) {
+            case 0: if (string[old_index] == '<') {state2 = 1;} else {state2 = 0;}
+                break;
+            case 1: if (string[old_index] == '/') {state2 = 2;} else {state2 = 0;}
+                break;
+            case 2: if (string[old_index] == 'p') {state2 = 3;} else {state2 = 0;}
+                break;
+            case 3: if (string[old_index] == 'r') {state2 = 4;} else {state2 = 0;}
+                break;
+            case 4: if (string[old_index] == 'e') {state2 = 5;} else {state2 = 0;}
+                break;
+            case 5: if (string[old_index] == '>') {pre_tags_open--;}
+            default:
+                state2 = 0;
+        }
 
         if (string[old_index] == '\n' && pre_tags_open == 0)
         {
@@ -898,4 +898,28 @@ query_var * bb_cgi_get_post(query_var *qv) {
     }
 
     return qv;
+}
+
+/*
+ * Magic numbers for checking filetypes
+ */
+const unsigned char JPEG[4][4] = {
+    {0xFF, 0xD8, 0xFF, 0xDB},
+    {0xFF, 0xD8, 0xFF, 0xE0},
+    {0xFF, 0xD8, 0xFF, 0xEE},
+    {0xFF, 0xD8, 0xFF, 0xE1}
+};
+int valid_file(char *buf)
+{
+    if (memcmp(buf, JPEG[0], 4) == 0) {
+        return 1;
+    } else if (memcmp(buf, JPEG[1], 4) == 0) {
+        return 1;
+    } else if (memcmp(buf, JPEG[2], 4) == 0) {
+        return 1;
+    } else if (memcmp(buf, JPEG[3], 4) == 0) {
+        return 1;
+    } else {
+        return 0;
+    }
 }

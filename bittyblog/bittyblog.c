@@ -30,14 +30,7 @@ void bb_free(bb_page_request *req)
     }
 
     // Free list of all pages on the site
-    for (int i = 0; i < bb_vec_count(req->pages); i++) {
-        bb_page *page = bb_vec_get(req->pages, i);
-        free(page->name);
-        free(page->id_name);
-        free(page);
-    }
     bb_vec_free(req->pages);
-    free(req->pages);
 
     // Free list of posts
     if (req->posts != NULL) {
@@ -134,7 +127,7 @@ bb_vec * bb_image_list(bb_page_request *req) {
     tinydir_open(&dir, req->image_dir);
 
     bb_vec * image_files = malloc(sizeof(bb_vec));
-    bb_vec_init(image_files);
+    bb_vec_init(image_files, NULL);
 
     while (dir.has_next)
     {
@@ -160,4 +153,34 @@ bb_vec * bb_image_list(bb_page_request *req) {
     tinydir_close(&dir);
 
     return image_files;
+}
+
+bb_vec * tokenize_tags(const char *str, const char * delim)
+{
+    char *s;
+    char *token;
+    char *str_cpy;
+    int str_length = strlen(str);
+
+    str_cpy = malloc(str_length+1);
+    memcpy(str_cpy, str, str_length);
+    str_cpy[str_length] = '\0';
+
+    bb_vec *vec = malloc(sizeof(bb_vec));
+    bb_vec_init(vec, NULL);
+
+    token = strtok_r(str_cpy, delim, &s);
+
+    while(token != NULL)
+    {
+        size_t token_length = strlen(token);
+        char *tmp = calloc(token_length+1, 1);
+        memcpy(tmp, token, token_length);
+        tmp = strtrim(tmp);
+        bb_vec_add(vec, tmp);
+        token = strtok_r(NULL, delim, &s);
+    }
+    free(str_cpy);
+
+    return vec;
 }

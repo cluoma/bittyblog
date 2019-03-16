@@ -14,12 +14,14 @@ typedef struct {
     int size;
     int count;
     void** data;
+    void (*f) (void *d);
 } bb_vec;
 
-void bb_vec_init(bb_vec*);
+void bb_vec_init(bb_vec*, void *);
+void bb_vec_free(bb_vec* );
+
 int bb_vec_count(bb_vec*);
 void bb_vec_add(bb_vec*, void*);
 void* bb_vec_get(bb_vec*, int);
-void bb_vec_free(bb_vec*);
 
 #endif /* vec_h */

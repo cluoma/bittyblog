@@ -62,6 +62,7 @@
         <div class="form-group"><label for="post_title">Title:</label><textarea name="post_title" class="form-control" rows="1" id="post_title">{{title}}</textarea></div><br>
         <div class="form-group"><label for="post_byline">Byline:</label><textarea name="post_byline" class="form-control" rows="1" id="post_byline">{{byline}}</textarea></div><br>
         <div class="form-group"><label for="post_text">Post:</label><textarea name="post_text" class="form-control" rows="20" id="post_text">{{text}}</textarea></div>
+        <div class="form-group"><label for="post_tags">Tags:</label><textarea name="post_tags" class="form-control" rows="1" id="post_tags"></textarea></div>
         <div><input id="post_visible" type="checkbox" name="post_visible" value="Invisible" {{#visible}}checked{{/visible}}><label for="post_visible">Published</label><br></div>
         <input type="file" name="post_thumbnail_upload" accept="image/*">
         <div class="form-group hidden"><label for="post_id">Post ID:</label><textarea name="post_id" class="form-control" rows="1" id="post_id">{{p_id}}</textarea></div>
@@ -91,6 +92,7 @@
         <div class="form-group"><label for="post_title">Title:</label><textarea name="post_title" class="form-control" rows="1" id="post_title"></textarea></div><br>
         <div class="form-group"><label for="post_byline">Byline:</label><textarea name="post_byline" class="form-control" rows="1" id="post_byline"></textarea></div><br>
         <div class="form-group"><label for="post_text">Post:</label><textarea name="post_text" class="form-control" rows="20" id="post_text"></textarea></div>
+        <div class="form-group"><label for="post_tags">Tags:</label><textarea name="post_tags" class="form-control" rows="1" id="post_tags"></textarea></div>
         <div><input id="post_visible" type="checkbox" name="post_visible" value="Invisible" {{#visible}}checked{{/visible}}><label for="post_visible">Published</label><br></div>
         <input type="file" name="post_thumbnail_upload" accept="image/*">
         <div class="form-group hidden"><label for="post_id">Post ID:</label><textarea name="post_id" class="form-control" rows="1" id="post_id"></textarea></div>
