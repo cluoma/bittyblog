@@ -7023,16 +7023,27 @@ h6, .h6 {
  */
 
 .blog-post {
+    /*font-family: Helvetica, Arial, sans-serif;*/
     margin-bottom: 60px;
     font-size: 15px;
 }
 .blog-post-title {
     margin-bottom: 5px;
     font-size: 40px;
+    font-weight: bold;
 }
 .blog-post-meta {
     margin-bottom: 20px;
     color: #999;
+}
+.blog-post-tag {
+    background-color: #428bca;
+    color: white;
+    padding: 1px 2px;
+    margin-top: 10px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
 }
 .blog-post-preview-card {
     background-color: white;
@@ -7052,10 +7063,12 @@ h6, .h6 {
     width: 200px;
     margin: -8px;
     margin-left: 20px;
+    margin-bottom: 0px;
 }
 .blog-post-preview-title {
     margin-bottom: 5px;
     font-size: 28px;
+    font-weight: bold;
 }
 
 @media screen and (max-width: 450px) {

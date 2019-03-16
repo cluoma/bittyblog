@@ -41,6 +41,7 @@ char * html_escape(char *str, size_t len);      // Sanitizes text for use in HTM
 unsigned long hash(unsigned char *str);         // djb2 hash function
 char *strtrim(char *str);                       // Removes leading and trailing: spaces, tabs, carriage ret, and newlines
 
-int valid_file(char *buf);
+// Check if a buffer looks like an image using magic numbers (jpg, png, gif)
+int is_image_file(char *buf);
 
 #endif /* cgi_h */

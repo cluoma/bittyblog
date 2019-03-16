@@ -54,23 +54,42 @@ INNER JOIN (SELECT * FROM pages WHERE name_id = @NAMEID) a ON p.page_id = a.id \
 LEFT JOIN (SELECT tr.post_id, group_concat(t.tag, ', ') `tags` \
 FROM tags t \
 INNER JOIN tags_relate tr on (tr.tag_id = t.id) \
+GROUP BY post_id \
 ) t \
 ON p.id = t.post_id \
 WHERE p.visible = 1 \
 ORDER BY time DESC \
 limit @LIMIT offset @OFFSET"
-#define POST_ID_QUERY "SELECT title, page_id, p.id as id, text, byline, datetime(time, 'unixepoch') AS time, thumbnail \
+#define POST_ID_QUERY "SELECT title, page_id, p.id as id, text, byline, datetime(time, 'unixepoch') AS time, thumbnail, tags \
 FROM posts p \
+LEFT JOIN (SELECT tr.post_id, group_concat(t.tag, ', ') `tags` \
+FROM tags t \
+INNER JOIN tags_relate tr on (tr.tag_id = t.id) \
+GROUP BY post_id \
+) t \
+ON p.id = t.post_id \
 WHERE p.id = @ID AND p.visible = 1"
-#define SEARCH_QUERY "SELECT title, p.id as id, text, byline, datetime(time, 'unixepoch') AS time, thumbnail \
+#define SEARCH_QUERY "SELECT title, p.id as id, text, byline, datetime(time, 'unixepoch') AS time, thumbnail, tags \
 FROM posts p \
 INNER JOIN (SELECT * FROM pages WHERE name_id = @NAMEID) a ON p.page_id = a.id \
+LEFT JOIN (SELECT tr.post_id, group_concat(t.tag, ', ') `tags` \
+FROM tags t \
+INNER JOIN tags_relate tr on (tr.tag_id = t.id) \
+GROUP BY post_id \
+) t \
+ON p.id = t.post_id \
 WHERE lower(text) like lower('%' || @KEYWORD || '%') \
 AND p.visible = 1 \
 ORDER BY time DESC"
-#define N_SEARCH_QUERY "SELECT title, p.id as id, text, byline, datetime(time, 'unixepoch') AS time, thumbnail \
+#define N_SEARCH_QUERY "SELECT title, p.id as id, text, byline, datetime(time, 'unixepoch') AS time, thumbnail, tags \
 FROM posts p \
 INNER JOIN (SELECT * FROM pages WHERE name_id = @NAMEID) a ON p.page_id = a.id \
+LEFT JOIN (SELECT tr.post_id, group_concat(t.tag, ', ') `tags` \
+FROM tags t \
+INNER JOIN tags_relate tr on (tr.tag_id = t.id) \
+GROUP BY post_id \
+) t \
+ON p.id = t.post_id \
 WHERE lower(text) like lower('%' || @KEYWORD || '%') \
 AND p.visible = 1 \
 ORDER BY time DESC \
@@ -78,11 +97,49 @@ limit @LIMIT offset @OFFSET"
 #define SEARCH_COUNT_QUERY "SELECT COUNT(*) \
 FROM posts p \
 INNER JOIN (SELECT * FROM pages WHERE name_id = @NAMEID) a ON p.page_id = a.id \
+LEFT JOIN (SELECT tr.post_id, group_concat(t.tag, ', ') `tags` \
+FROM tags t \
+INNER JOIN tags_relate tr on (tr.tag_id = t.id) \
+GROUP BY post_id \
+) t \
+ON p.id = t.post_id \
 WHERE lower(text) like lower('%' || @KEYWORD || '%') AND \
 p.visible = 1 \
 ORDER BY time DESC"
-#define MONTH_YEAR_QUERY "SELECT title, p.id as id, text, byline, datetime(time, 'unixepoch') AS time, thumbnail \
+#define N_TAG_QUERY "SELECT title, p.id as id, text, byline, datetime(time, 'unixepoch') AS time, thumbnail, tags \
+FROM posts p \
+INNER JOIN (SELECT DISTINCT tr.post_id \
+FROM tags t \
+INNER JOIN tags_relate tr on (tr.tag_id = t.id) \
+WHERE t.`tag` = ? \
+) t1 \
+ON p.id = t1.post_id \
+LEFT JOIN (SELECT tr.post_id, group_concat(t.tag, ', ') `tags` \
+FROM tags t \
+INNER JOIN tags_relate tr on (tr.tag_id = t.id) \
+GROUP BY post_id \
+) t2 \
+ON p.id = t2.post_id \
+WHERE p.visible = 1 \
+ORDER BY time DESC \
+limit ? offset ?"
+#define TAG_COUNT_QUERY "SELECT COUNT(*) \
+FROM posts p \
+INNER JOIN (SELECT DISTINCT tr.post_id \
+FROM tags t \
+INNER JOIN tags_relate tr on (tr.tag_id = t.id) \
+WHERE t.`tag` = ? \
+) t \
+ON p.id = t.post_id \
+WHERE p.visible = 1"
+#define MONTH_YEAR_QUERY "SELECT title, p.id as id, text, byline, datetime(time, 'unixepoch') AS time, thumbnail, tags \
 FROM posts p INNER JOIN (SELECT * FROM pages WHERE name_id = @NAMEID) a ON p.page_id = a.id \
+LEFT JOIN (SELECT tr.post_id, group_concat(t.tag, ', ') `tags` \
+FROM tags t \
+INNER JOIN tags_relate tr on (tr.tag_id = t.id) \
+GROUP BY post_id \
+) t \
+ON p.id = t.post_id \
 WHERE CAST(strftime('%m',time,'unixepoch') AS INT) = @MONTH \
 AND CAST(strftime('%Y',time,'unixepoch') AS INT) = @YEAR \
 AND p.visible = 1 \
@@ -96,12 +153,24 @@ ORDER BY time DESC"
 /*
  * Queries for loading posts, for admin page
  */
-#define ADMIN_ALL_POSTS_QUERY "SELECT a.name as page, p.id as id, title, datetime(time, 'unixepoch') as time, byline, thumbnail, visible \
+#define ADMIN_ALL_POSTS_QUERY "SELECT a.name as page, p.id as id, title, datetime(time, 'unixepoch') as time, byline, thumbnail, visible, tags \
 FROM posts p \
 INNER JOIN pages a ON p.page_id = a.id \
+LEFT JOIN (SELECT tr.post_id, group_concat(t.tag, ', ') `tags` \
+FROM tags t \
+INNER JOIN tags_relate tr on (tr.tag_id = t.id) \
+GROUP BY post_id \
+) t \
+ON p.id = t.post_id \
 ORDER BY time DESC"
-#define ADMIN_POST_ID_QUERY "SELECT title, page_id, p.id as id, text, byline, datetime(time, 'unixepoch') AS time, thumbnail, visible \
+#define ADMIN_POST_ID_QUERY "SELECT title, page_id, p.id as id, text, byline, datetime(time, 'unixepoch') AS time, thumbnail, visible, tags \
 FROM posts p \
+LEFT JOIN (SELECT tr.post_id, group_concat(t.tag, ', ') `tags` \
+FROM tags t \
+INNER JOIN tags_relate tr on (tr.tag_id = t.id) \
+GROUP BY post_id \
+) t \
+ON p.id = t.post_id \
 WHERE p.id = @ID"
 
 /*
@@ -124,8 +193,10 @@ WHERE p.id = @ID"
 // Posts interface
 int db_count(char* page_name_id);
 int db_search_count(char* page_name_id, char* keyword);
-vector_p * db_search(char* page_name_id, char *keyword);
-vector_p * db_nsearch(char* page_name_id, char *keyword, int count, int offset);
+int db_tag_count(char* tag);
+vector_p * db_search(char* page_name_id, char* keyword);
+vector_p * db_nsearch(char* page_name_id, char* keyword, int count, int offset);
+vector_p * db_ntag(char* tag, int count, int offset);
 vector_p * db_monthyear(char* page_name_id, int month, int year);
 vector_p * db_nposts(char* page_name_id, int count, int offset);
 vector_p * db_id(int id);
@@ -133,8 +204,9 @@ vector_p * db_id(int id);
 // Admin posts interface
 vector_p * db_admin_all_posts_preview();
 vector_p * db_admin_id(int id);
-int db_new_post(Post *p);
-int db_update_post(Post *p);
+int db_new_post(Post* p);
+int db_update_post(Post* p);
+int db_delete_post(int post_id);
 
 // Login session interface
 int verify_user(const char* user, const char* password);

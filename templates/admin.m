@@ -29,11 +29,17 @@
     </form> 
 
     <table>
-        <tr><th>Edit</th><th>Published</th><th>Page</th><th>Title</th><th>Byline</th><th>Time</th></tr>
+        <tr><th>Edit</th><th>Published</th><th>Page</th><th>Title</th><th>Byline</th><th>Time</th><th>Delete</th></tr>
         {{#posts}}
         <tr>
             <td><a href="{{script_name}}?sid={{sid}}&p_id={{p_id}}">Edit</a></td>
             <td>{{#visible}}Published{{/visible}}{{^visible}}<b>Hidden</b>{{/visible}}</td><td>{{page}}</td><td>{{title}}</td><td>{{byline}}</td><td>{{time}}</td>
+            <td>
+                <form action="{{script_name}}?sid={{sid}}&c=posts&a=delete" method="POST">
+                <input type="hidden" name="post_id" value="{{p_id}}" />
+                <button type="submit">Delete</button>
+                </form>
+            </td>
         </tr>
         {{/posts}}
     </table>
@@ -62,7 +68,7 @@
         <div class="form-group"><label for="post_title">Title:</label><textarea name="post_title" class="form-control" rows="1" id="post_title">{{title}}</textarea></div><br>
         <div class="form-group"><label for="post_byline">Byline:</label><textarea name="post_byline" class="form-control" rows="1" id="post_byline">{{byline}}</textarea></div><br>
         <div class="form-group"><label for="post_text">Post:</label><textarea name="post_text" class="form-control" rows="20" id="post_text">{{text}}</textarea></div>
-        <div class="form-group"><label for="post_tags">Tags:</label><textarea name="post_tags" class="form-control" rows="1" id="post_tags"></textarea></div>
+        <div class="form-group"><label for="post_tags">Tags:</label><textarea name="post_tags" class="form-control" rows="1" id="post_tags">{{#tags}}{{.}}, {{/tags}}</textarea></div>
         <div><input id="post_visible" type="checkbox" name="post_visible" value="Invisible" {{#visible}}checked{{/visible}}><label for="post_visible">Published</label><br></div>
         <input type="file" name="post_thumbnail_upload" accept="image/*">
         <div class="form-group hidden"><label for="post_id">Post ID:</label><textarea name="post_id" class="form-control" rows="1" id="post_id">{{p_id}}</textarea></div>
@@ -105,7 +111,6 @@
     
     <h1> Your Media: </h1>
 
-    <!-- New Post Button -->
     <form role="form" action="{{script_name}}?sid={{sid}}&c=media&a=new" method="POST" enctype="multipart/form-data">
         <input type="file" name="media_upload" accept="image/*">
         <button type="submit">Upload Image</button><br>

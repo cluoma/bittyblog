@@ -91,6 +91,7 @@ void bb_load_posts(bb_page_request *req) {
     vector_p * entries;
 
     char *search = bb_cgi_get_var( req->q_vars, "search" );
+    char *tag = bb_cgi_get_var( req->q_vars, "tag" );
     char *id = bb_cgi_get_var( req->q_vars, "id" );
     char *start = bb_cgi_get_var( req->q_vars, "start" );
     char *month = bb_cgi_get_var( req->q_vars, "month" );
@@ -101,6 +102,11 @@ void bb_load_posts(bb_page_request *req) {
         {
             entries = db_nsearch(req->page->id_name, search, POSTS_PER_PAGE, (start == NULL ? 0 : atoi(start)));
             req->total_post_count = db_search_count(req->page->id_name, search);
+        }
+        else if (tag != NULL)
+        {
+            entries = db_ntag(tag, POSTS_PER_PAGE, (start == NULL ? 0 : atoi(start)));
+            req->total_post_count = db_tag_count(tag);
         }
         else if (start != NULL)
         {
@@ -165,6 +171,7 @@ bb_vec * tokenize_tags(const char *str, const char * delim)
     str_cpy = malloc(str_length+1);
     memcpy(str_cpy, str, str_length);
     str_cpy[str_length] = '\0';
+    str_cpy = strtrim(str_cpy);
 
     bb_vec *vec = malloc(sizeof(bb_vec));
     bb_vec_init(vec, NULL);
@@ -177,7 +184,11 @@ bb_vec * tokenize_tags(const char *str, const char * delim)
         char *tmp = calloc(token_length+1, 1);
         memcpy(tmp, token, token_length);
         tmp = strtrim(tmp);
-        bb_vec_add(vec, tmp);
+        if (*tmp != '\0') {
+            bb_vec_add(vec, tmp);
+        } else {
+            free(tmp);
+        }
         token = strtok_r(NULL, delim, &s);
     }
     free(str_cpy);

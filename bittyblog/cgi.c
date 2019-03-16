@@ -55,7 +55,7 @@ query_var * bb_cgi_get_query(const char *query_s)
     return first;
 }
 
-query_var * bb_cgi_get_post_simple()
+query_var * bb_cgi_get_post_simple(query_var *qv)
 {
     int size = atoi(GET_ENV_VAR("CONTENT_LENGTH"));
     char *query_s = calloc(size+1, 1);
@@ -69,7 +69,7 @@ query_var * bb_cgi_get_post_simple()
     strcpy(str_cpy, query_s);
 
     char *var, *key, *val;
-    query_var *first = NULL, *q_var = NULL;
+    // query_var *first = NULL, *q_var = NULL;
     while ((var = strsep(&str_cpy, "&")) != NULL)
     {
         key = strsep(&var, "=");
@@ -78,29 +78,36 @@ query_var * bb_cgi_get_post_simple()
         if (key != NULL && val != NULL &&
             strcmp(key, "") != 0 && strcmp(val, "") != 0)
         {
-            // Different behaviour for first element
-            if (q_var == NULL)
-            {
-                q_var = malloc(sizeof(query_var));
-                q_var->next = NULL;
-                first = q_var;
-            }
-            else
-            {
-                q_var->next = malloc(sizeof(query_var));
-                q_var = q_var->next;
-                q_var->next = NULL;
-            }
+            // // Different behaviour for first element
+            // if (q_var == NULL)
+            // {
+            //     q_var = malloc(sizeof(query_var));
+            //     q_var->next = NULL;
+            //     first = q_var;
+            // }
+            // else
+            // {
+            //     q_var->next = malloc(sizeof(query_var));
+            //     q_var = q_var->next;
+            //     q_var->next = NULL;
+            // }
 
-            q_var->key = calloc(1, strlen(key)+1);
-            q_var->val = calloc(1, strlen(val)+1);
-            strcpy(q_var->key, key);
-            html_to_text( val, q_var->val );
+            char *tmp = calloc(1, strlen(val)+1);
+            html_to_text( val, tmp );
+            bb_cgi_add_var(&qv, key, tmp, strlen(tmp)+1);
+            free(tmp);
+
+            // q_var->key = calloc(1, strlen(key)+1);
+            // q_var->val = calloc(1, strlen(val)+1);
+            // strcpy(q_var->key, key);
+            // html_to_text( val, q_var->val );
         }
     }
     free(for_free);
+    free(query_s);
 
-    return first;
+    //return first;
+    return qv;
 }
 
 
@@ -889,7 +896,7 @@ query_var * bb_cgi_get_post(query_var *qv) {
     char *t = strstr(ct, "application/x-www-form-urlencoded");
     if (t != NULL)
     {
-        qv = bb_cgi_get_post_simple();
+        qv = bb_cgi_get_post_simple(qv);
     } else {
         t = strstr(ct, "multipart/form-data");
         if (t != NULL) {
@@ -903,23 +910,25 @@ query_var * bb_cgi_get_post(query_var *qv) {
 /*
  * Magic numbers for checking filetypes
  */
-const unsigned char JPEG[4][4] = {
-    {0xFF, 0xD8, 0xFF, 0xDB},
-    {0xFF, 0xD8, 0xFF, 0xE0},
-    {0xFF, 0xD8, 0xFF, 0xEE},
-    {0xFF, 0xD8, 0xFF, 0xE1}
-};
-int valid_file(char *buf)
-{
-    if (memcmp(buf, JPEG[0], 4) == 0) {
-        return 1;
-    } else if (memcmp(buf, JPEG[1], 4) == 0) {
-        return 1;
-    } else if (memcmp(buf, JPEG[2], 4) == 0) {
-        return 1;
-    } else if (memcmp(buf, JPEG[3], 4) == 0) {
-        return 1;
-    } else {
-        return 0;
+int is_image_file(char *buf)
+{   
+    const unsigned char magic_numbers[6][4] = {
+        // JPG
+        {0xFF, 0xD8, 0xFF, 0xDB},
+        {0xFF, 0xD8, 0xFF, 0xE0},
+        {0xFF, 0xD8, 0xFF, 0xEE},
+        {0xFF, 0xD8, 0xFF, 0xE1},
+        // PNG
+        {0x89 ,0x50 ,0x4E, 0x47},
+        // GIF
+        {0x47, 0x49, 0x46, 0x38}
+    };
+
+    for (int i = 0; i < 6; i++) {
+        if (memcmp(buf, magic_numbers[i], 4) == 0) {
+            return 1;
+        }
     }
+
+    return 0;
 }

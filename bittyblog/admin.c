@@ -62,6 +62,15 @@ void edit_post(JSON_Object *root_object, bb_page_request* req, int p_id) {
         json_object_set_string(json_value_get_object(tmp_post), "extra", entries->p[0].extra);
         json_object_set_string(json_value_get_object(tmp_post), "thumbnail", entries->p[0].thumbnail);
         json_object_set_number(json_value_get_object(tmp_post), "visible", entries->p[0].visible);
+        // Add an array of tags to the post
+        bb_vec *tags = entries->p[0].tags;
+        if (tags != NULL) {
+            JSON_Array *json_tags = json_value_get_array(json_value_init_array());
+            for (int j = 0; j < bb_vec_count(tags); j++) {
+                json_array_append_string(json_tags, (char*)bb_vec_get(tags, j));
+            }
+            json_object_set_value(json_value_get_object(tmp_post), "tags", json_array_get_wrapping_value(json_tags));
+        }
         json_array_append_value(posts, tmp_post);
         json_object_set_value(root_object, "posts", json_array_get_wrapping_value(posts));
     }
@@ -267,14 +276,28 @@ int main()
             Post p;
             fill_post(&req, &p);
             if (strcmp(action, "update") == 0) {
+                bb_vec *tags = p.tags;
+                for (int i = 0; tags != NULL && i < bb_vec_count(tags); i++) {
+                    fprintf(stderr, "TAG:: '%s'\n", (char*)bb_vec_get(tags, i));
+                }
                 db_update_post(&p);
                 bb_vec_free(p.tags);
                 printf("Successful :)<br>");
             } else if (strcmp(action, "new") == 0) {
+                bb_vec *tags = p.tags;
+                for (int i = 0; tags != NULL && i < bb_vec_count(tags); i++) {
+                    fprintf(stderr, "TAG:: '%s'\n", (char*)bb_vec_get(tags, i));
+                }
                 db_new_post(&p);
+                bb_vec_free(p.tags);
                 printf("Successful :)<br>");
             } else if (strcmp(action, "delete") == 0) {
                 // Handle deletion of a post
+                if (bb_cgi_get_var(req.q_vars, "post_id") != NULL) {
+                    int p_id = atoi(bb_cgi_get_var(req.q_vars, "post_id"));
+                    db_delete_post(p_id);
+                    fprintf(stderr, "Attempted delete of Post ID: %d\n", p_id);
+                }
             }
         } else if (strcmp(category, "pages") == 0) {
             if (strcmp(action, "update") == 0) {
@@ -298,17 +321,12 @@ int main()
             } else if (strcmp(action, "new") == 0) {
                 char * data = bb_cgi_get_var(req.q_vars, "media_upload");
                 long data_len = bb_cgi_get_var_len(req.q_vars, "media_upload");
-                if (data != NULL && data_len > 0) {
+                if (data != NULL && data_len > 4 && is_image_file(data)) {
                     char * filename = bb_cgi_get_var(req.q_vars, "media_upload.filename");
                     FILE *out;
                     char filepath[1024];
                     snprintf(filepath, sizeof(filepath)-1, "%s/%s", req.image_dir, filename);
                     out = fopen(filepath, "wb+");
-                    // fprintf(stderr, "0x%x ", data[0]);
-                    // fprintf(stderr, "0x%x ", data[1]);
-                    // fprintf(stderr, "0x%x ", data[2]);
-                    // fprintf(stderr, "0x%x ", data[3]);
-                    // if (valid_file(data)) printf("Awesome!<br>");
                     fwrite(data, 1, data_len, out);
                     fclose(out);
                     printf("Successful :)<br>");
