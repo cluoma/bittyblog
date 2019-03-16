@@ -55,14 +55,34 @@
 <div class="container">
 <div class="row">
     <div class="col-sm-8 blog-main">
-            {{#posts}}
-            <div class="blog-post">
-            <a href="{{script_name}}?page={{page_name}}&id={{p_id}}"><h2 class="blog-post-title">{{title}}</h2></a>
-            <p class="blog-post-meta">{{time}}</p>
-            <p>{{&text}}</p>
-            <p><b>Tags:</b> {{#tags}}<a href="{{script_name}}?tag={{.}}">{{.}}</a> {{/tags}}</p>
-            </div>
-            {{/posts}}
+
+        {{#search}}
+        <!-- Search notification box -->
+        <div class="panel panel-default" style="border-color: #428bca">
+        <div class="panel-heading" style="background-color: #428bca; color: #fff">Search</div>
+        <div class="panel-body">
+        <p>Showing blog posts containing the search phrase: <b>{{.}}</b></p>
+        </div>
+        </div>
+        {{/search}}
+        {{#tag}}
+        <!-- Search notification box -->
+        <div class="panel panel-default" style="border-color: #428bca">
+        <div class="panel-heading" style="background-color: #428bca; color: #fff">Tag</div>
+        <div class="panel-body">
+        <p>Showing blog posts sorted under the tag: <b>{{.}}</b></p>
+        </div>
+        </div>
+        {{/tag}}
+
+        {{#posts}}
+        <div class="blog-post">
+        <a href="{{script_name}}?page={{page_name}}&id={{p_id}}"><h2 class="blog-post-title">{{title}}</h2></a>
+        <p class="blog-post-meta">{{time}}</p>
+        <p>{{&text}}</p>
+        <p style="clear: both; margin: 0px;"><b>Tags:</b> {{#tags}}<a class="blog-post-tag" href="{{script_name}}?tag={{.}}">{{.}}</a> {{/tags}}</p>
+        </div>
+        {{/posts}}
     </div>
     <div class="col-sm-3 col-sm-offset-1 blog-sidebar">
         <!-- About box sidebar module-->

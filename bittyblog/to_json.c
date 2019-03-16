@@ -38,6 +38,9 @@ int bb_default_to_json(JSON_Object *root_object, bb_page_request *req) {
     // Add search query string variable to json
     char *search = bb_cgi_get_var(req->q_vars, "search");
     if (search) json_object_set_string(root_object, "search", search);
+    // Add tag name to json if needed
+    char *tag = bb_cgi_get_var(req->q_vars, "tag");
+    if (tag && !search) json_object_set_string(root_object, "tag", tag);
 
     // Add CURRENT YEAR to JSON
     time_t timeval;

@@ -64,6 +64,15 @@
         </div>
         </div>
         {{/search}}
+        {{#tag}}
+        <!-- Search notification box -->
+        <div class="panel panel-default" style="border-color: #428bca">
+        <div class="panel-heading" style="background-color: #428bca; color: #fff">Tag</div>
+        <div class="panel-body">
+        <p>Showing blog posts sorted under the tag: <b>{{.}}</b></p>
+        </div>
+        </div>
+        {{/tag}}
 
         {{#posts}}
         <div class="blog-post-preview-card">
