@@ -43,16 +43,25 @@ sqlite3 *open_database()
     }
     else
     {
-        //fprintf(stderr, "Opened database successfully\n");
         return db;
     }
 }
 
 /*
  *  Execute query function takes arguments to prepare a statement then
- *  executes the query. A callback must be provided to deal with the results
+ *  executes the query. A callback must be provided to deal with the results.
+ * 
+ *  Arguments will be bound to the query in order, according to the types string
+ *  types is a string consisting of:
+ *  s: string char*
+ *  i: int
+ *  eg. "ssis" will bind arguments as string, string, int, string
+ * 
+ *  Callbacks MUST return 0, otherwise resources will be freed and NULL returned.
+ * 
+ *  If no callback is supplied, the query will be executed once using sqlite3_step
  */
-int execute_query(void (*callback)(sqlite3_stmt*, void*), void* data,
+int execute_query(int (*callback)(sqlite3_stmt*, void*), void* data,
                   const char* query, const char* types, ...) {
     sqlite3 *db;
     sqlite3_stmt *results;
@@ -65,6 +74,7 @@ int execute_query(void (*callback)(sqlite3_stmt*, void*), void* data,
     }
 
     if (sqlite3_prepare_v2(db, query, -1, &results, 0) != SQLITE_OK) {
+        fprintf(stderr, "Could not prepare query: %s\n", sqlite3_errmsg(db));
         sqlite3_close(db);
         return 0;
     }
@@ -77,32 +87,56 @@ int execute_query(void (*callback)(sqlite3_stmt*, void*), void* data,
         switch (type) {
 
             case 's':
-            if (sqlite3_bind_text(results, i, va_arg(ap, char*), -1, SQLITE_TRANSIENT) != SQLITE_OK)
-                return 0;
+            if (sqlite3_bind_text(results, i, va_arg(ap, char*), -1, SQLITE_TRANSIENT) != SQLITE_OK) {
+                fprintf(stderr, "Could not bind string parameter: %s\n", sqlite3_errmsg(db));
+                va_end(ap);
+                goto bad;
+            }
             break;
 
             case 'i':
-            if (sqlite3_bind_int(results, i, va_arg(ap, int)) != SQLITE_OK)
-                return 0;
+            if (sqlite3_bind_int(results, i, va_arg(ap, int)) != SQLITE_OK) {
+                fprintf(stderr, "Could not bind int parameter: %s\n", sqlite3_errmsg(db));
+                va_end(ap);
+                goto bad;
+            }
             break;
 
             default:
-                return 0;
+                fprintf(stderr, "Incorrect character found in type string: %c\n", type);
+                va_end(ap);
+                goto bad;
         }
         i++;
     }
+    va_end(ap);
 
     // Call callback function to deal with query results
-    (*callback)(results, data);
+    if (callback) {
+        if ((*callback)(results, data)) {
+            fprintf(stderr, "SQL Execute Callback return bad");
+            goto bad;
+        }
+    } else {
+        int rv = sqlite3_step(results);
+        if (rv != SQLITE_ROW && rv != SQLITE_DONE) {
+            fprintf(stderr, "SQL Execute Step return bad");
+            goto bad;
+        }
+    }
 
     sqlite3_finalize(results);
     sqlite3_close(db);
-
     return 1;
+
+bad:
+    sqlite3_finalize(results);
+    sqlite3_close(db);
+    return 0;
 }
 
 // Load post data from database
-void load_posts_cb(sqlite3_stmt *results, void* data) {
+int load_posts_cb(sqlite3_stmt *results, void* data) {
     vector_p *vp = (vector_p*)data;
 
     while(sqlite3_step(results) == SQLITE_ROW)
@@ -166,6 +200,7 @@ void load_posts_cb(sqlite3_stmt *results, void* data) {
         vp->p = post;
         vp->n ++;
     }
+    return 0;
 }
 
 vector_p * db_ntag(char* tag, int count, int offset)
@@ -218,12 +253,13 @@ vector_p * db_id(int id)
 }
 
 // Get the number of posts
-void db_count_cb(sqlite3_stmt* st, void* a) {
+int db_count_cb(sqlite3_stmt* st, void* a) {
     while(sqlite3_step(st) == SQLITE_ROW)
     {
         *(int*)a = sqlite3_column_int(st, 0);
         break;
     }
+    return 0;
 }
 int db_count(char* page_name_id)
 {
@@ -266,8 +302,10 @@ int db_tag_count(char* tag) {
     return 0;
 }
 
-// Get list of Pages from database
-void db_pages_cb(sqlite3_stmt* st, void* a) {
+/*
+ * Get a list of pages from the database
+ */
+int db_pages_cb(sqlite3_stmt* st, void* a) {
     bb_vec *pages = (bb_vec*)a;
     while(sqlite3_step(st) == SQLITE_ROW)
     {
@@ -287,6 +325,7 @@ void db_pages_cb(sqlite3_stmt* st, void* a) {
 
         bb_vec_add(pages, page);
     }
+    return 0;
 }
 void db_pages_free_cb(void *d) {
     bb_page *page = (bb_page *)d;
@@ -577,10 +616,11 @@ Archives load_archives() {
     return archives;
 }
 
-void verify_user_cb(sqlite3_stmt* st, void* a) {
+int verify_user_cb(sqlite3_stmt* st, void* a) {
     if(sqlite3_step(st) == SQLITE_ROW) {
         *(int*)a = 1;
     }
+    return 0;
 }
 int verify_user(const char* user, const char* password) {
     int success = 0;
@@ -606,10 +646,11 @@ int verify_session(const char* session) {
     return 0;
 }
 
-void set_user_session_cb(sqlite3_stmt* st, void* a) {
+int set_user_session_cb(sqlite3_stmt* st, void* a) {
     if(sqlite3_step(st) == SQLITE_DONE ) {
         *(int*)a = 1;
     }
+    return 0;
 }
 int set_user_session(const char* user, const char* password, const char* session) {
     int success = 0;

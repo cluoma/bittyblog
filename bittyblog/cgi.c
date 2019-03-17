@@ -69,7 +69,6 @@ query_var * bb_cgi_get_post_simple(query_var *qv)
     strcpy(str_cpy, query_s);
 
     char *var, *key, *val;
-    // query_var *first = NULL, *q_var = NULL;
     while ((var = strsep(&str_cpy, "&")) != NULL)
     {
         key = strsep(&var, "=");
@@ -78,35 +77,15 @@ query_var * bb_cgi_get_post_simple(query_var *qv)
         if (key != NULL && val != NULL &&
             strcmp(key, "") != 0 && strcmp(val, "") != 0)
         {
-            // // Different behaviour for first element
-            // if (q_var == NULL)
-            // {
-            //     q_var = malloc(sizeof(query_var));
-            //     q_var->next = NULL;
-            //     first = q_var;
-            // }
-            // else
-            // {
-            //     q_var->next = malloc(sizeof(query_var));
-            //     q_var = q_var->next;
-            //     q_var->next = NULL;
-            // }
-
             char *tmp = calloc(1, strlen(val)+1);
             html_to_text( val, tmp );
             bb_cgi_add_var(&qv, key, tmp, strlen(tmp)+1);
             free(tmp);
-
-            // q_var->key = calloc(1, strlen(key)+1);
-            // q_var->val = calloc(1, strlen(val)+1);
-            // strcpy(q_var->key, key);
-            // html_to_text( val, q_var->val );
         }
     }
     free(for_free);
     free(query_s);
 
-    //return first;
     return qv;
 }
 

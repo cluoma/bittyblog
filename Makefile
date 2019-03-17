@@ -19,19 +19,19 @@ libMagnum.a: d_string.o file.o json.o parson.o magnum.o
 	ar rcs libMagnum.a d_string.o file.o json.o parson.o magnum.o
 
 d_string.o:
-	gcc -c -o d_string.o magnum/src/d_string.c
+	gcc -c -o d_string.o -O3 magnum/src/d_string.c
 
 file.o:
-	gcc -c -o file.o magnum/src/file.c
+	gcc -c -o file.o -O3 magnum/src/file.c
 
 json.o:
-	gcc -c -o json.o magnum/src/json.c
+	gcc -c -o json.o -O3 magnum/src/json.c
 
 parson.o:
-	gcc -c -o parson.o magnum/src/parson.c
+	gcc -c -o parson.o -O3 magnum/src/parson.c
 
 magnum.o:
-	gcc -c -o magnum.o magnum/src/magnum.c
+	gcc -c -o magnum.o -O3 magnum/src/magnum.c
 
 .PHONY : clean
 clean:

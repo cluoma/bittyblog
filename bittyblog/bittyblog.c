@@ -30,7 +30,9 @@ void bb_free(bb_page_request *req)
     }
 
     // Free list of all pages on the site
-    bb_vec_free(req->pages);
+    if (req->pages != NULL) {
+        bb_vec_free(req->pages);
+    }
 
     // Free list of posts
     if (req->posts != NULL) {
@@ -44,6 +46,7 @@ void bb_init(bb_page_request *req, int options)
     req->request_method = GET_ENV_VAR("REQUEST_METHOD");
     req->script_name = GET_ENV_VAR("SCRIPT_NAME");
 
+    // Parse query string and POST data
     req->q_vars = NULL;
     if (options & PARSE_GET) {
         req->q_vars = bb_cgi_get_query(GET_ENV_VAR("QUERY_STRING"));
@@ -65,7 +68,6 @@ void bb_init(bb_page_request *req, int options)
     // Get a list of all pages on the site
     req->pages = db_pages();
     req->page = NULL;
-
     // Check if the request page exists
     for (int i = 0; i < bb_vec_count(req->pages); i++) {
         bb_page *page = bb_vec_get(req->pages, i);
@@ -75,12 +77,14 @@ void bb_init(bb_page_request *req, int options)
         }
     }
 
+    // Fill in the rest of the needed info
     req->copyright_owner = COPYRIGHT_OWNER;
     req->navbar_title = NAVBAR_TITLE;
     req->html_title = HTML_TITLE;
     req->db_path = DB_PATH;
     req->image_dir = IMAGE_PATH;
 
+    // Init variables for blog posts
     req->posts = NULL;
     req->total_post_count = 0;
 }
