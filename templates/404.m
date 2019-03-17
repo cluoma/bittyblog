@@ -54,7 +54,7 @@
 </nav>
 
 <div class="container">
-    <p>404 - Sorry Page Not Found :(</p>
+    <h2 class="blog-post-title" style="text-align: center;">Sorry, Page Not Found :(</h2>
 </div>
 
 <!-- Footer -->

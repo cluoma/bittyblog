@@ -83,6 +83,10 @@
             <p style="clear: both; margin: 0px;"><b>Tags:</b> {{#tags}}<a class="blog-post-tag" href="{{script_name}}?tag={{.}}">{{.}}</a> {{/tags}}</p>
         </div>
         {{/posts}}
+        {{^posts}}
+        <h2 class="blog-post-title" style="text-align: center;">No Posts Found</h2>
+        {{/posts}}
+        
     </div>
     <div class="col-sm-3 col-sm-offset-1 blog-sidebar">
         <!-- About box sidebar module-->

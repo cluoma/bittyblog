@@ -29,30 +29,33 @@ int main()
     bb_page_request req;
     bb_init(&req, PARSE_GET);
 
-    // If page does not exist, goto a page not found page
-    if (req.page == NULL) {
-        bb_free(&req);
-        return 0;
-    }
-    Archives archives;
-
-    char *id;
-
-    /* Get QueryString variables */
-    id = bb_cgi_get_var( req.q_vars, "id" );
-
-    // If we have an id, always use FULL BLOG POST style
-    if(id) req.page->style = BLOG_FULL_POST;
-
     // Initiate JSON objects
     JSON_Value *root_value = json_value_init_object();
     JSON_Object *root_object = json_value_get_object(root_value);
-
     bb_default_to_json(root_object, &req);
+
+    // If page exists, load posts and archive data
+    if (req.page != NULL) {
+        // Posts
+        bb_load_posts(&req);
+        bb_posts_to_json(root_object, &req, 1);
+
+        // Archives
+        Archives archives;
+        archives = load_archives();
+        bb_archives_to_json(root_object, &archives);
+        free_archives(&archives);
+
+        bb_nav_buttons_to_json(root_object, &req);
+    }
+
+    // If we have an id, always use FULL BLOG POST style
+    if( bb_cgi_get_var(req.q_vars, "id") ) req.page->style = BLOG_FULL_POST;
 
     // Load the currect template file, based on page style
     DString *template;
-    switch(req.page->style) {
+    int page_style = req.page != NULL ? req.page->style : MISSING;
+    switch( page_style ) {
         char dir_base[1024];
         case BLOG_FULL_POST:
             snprintf(dir_base, 1023, "%s/blog.m", TEMPLATE_PATH);
@@ -66,25 +69,15 @@ int main()
             snprintf(dir_base, 1023, "%s/contact.m", TEMPLATE_PATH);
             template = scan_file(dir_base);
             break;
+        case MISSING:
+            snprintf(dir_base, 1023, "%s/404.m", TEMPLATE_PATH);
+            template = scan_file(dir_base);
+            break;
         default:
             snprintf(dir_base, 1023, "%s/blog.m", TEMPLATE_PATH);
             template = scan_file(dir_base);
             break;
     }
-
-    bb_load_posts(&req);
-    bb_posts_to_json(root_object, &req, 1);
-
-    archives = load_archives();
-    bb_archives_to_json(root_object, &archives);
-    free_archives(&archives);
-
-    bb_nav_buttons_to_json(root_object, &req);
-
-    // char *serialized_string;
-    // serialized_string = json_serialize_to_string_pretty(root_value);
-    // puts(serialized_string);
-    // json_free_serialized_string(serialized_string);
 
     DString * out = d_string_new("");
     magnum_populate_from_json(template, root_value, out, NULL, NULL);

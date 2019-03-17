@@ -22,7 +22,8 @@
 enum bb_page_styles {
     BLOG_FULL_POST  = 0,
     BLOG_SMALL_POST = 1,
-    CONTACT         = 2
+    CONTACT         = 2,
+    MISSING         = 4
 };
 
 // Information on the type of webpage
