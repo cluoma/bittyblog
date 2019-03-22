@@ -32,6 +32,7 @@ typedef struct {
     char* id_name;
     char* name;
     int style;
+    bb_vec *tags;
 } bb_page;
 
 // Main page request state

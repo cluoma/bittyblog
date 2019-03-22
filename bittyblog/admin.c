@@ -189,6 +189,29 @@ void fill_post(bb_page_request *req, Post *p) {
     } else {p->tags = NULL;}
 }
 
+void pages(JSON_Object *root_object, bb_page_request* req) {
+    // Add pages to JSON
+    JSON_Array *pages = json_value_get_array(json_value_init_array());
+    for (int i = 0; i < req->pages->count; i++) {
+        JSON_Value *tmp = json_value_init_object();
+        json_object_set_number(json_value_get_object(tmp), "id", ((bb_page*)bb_vec_get(req->pages, i))->id);
+        json_object_set_string(json_value_get_object(tmp), "id_name", ((bb_page*)bb_vec_get(req->pages, i))->id_name);
+        json_object_set_string(json_value_get_object(tmp), "name", ((bb_page*)bb_vec_get(req->pages, i))->name);
+        //json_object_set_string(json_value_get_object(tmp), "style", ((bb_page*)bb_vec_get(req->pages, i))->style);
+        // Add an array of tags to the post
+        bb_vec *tags = ((bb_page*)bb_vec_get(req->pages, i))->tags;
+        if (tags != NULL) {
+            JSON_Array *json_tags = json_value_get_array(json_value_init_array());
+            for (int j = 0; j < bb_vec_count(tags); j++) {
+                json_array_append_string(json_tags, (char*)bb_vec_get(tags, j));
+            }
+            json_object_set_value(json_value_get_object(tmp), "tags", json_array_get_wrapping_value(json_tags));
+        }
+        json_array_append_value(pages, tmp);
+    }
+    json_object_set_value(root_object, "pages", json_array_get_wrapping_value(pages));
+}
+
 void media_to_json(JSON_Object *root_object, bb_page_request* req) {
     bb_vec * image_list = bb_image_list(req);
     // Add image list to JSON
@@ -369,7 +392,10 @@ int main()
         }
         else if (category != NULL && strcmp(category, "pages") == 0)
         {    // Load list of pages
-
+            if (action == NULL) {
+                pages(root_object, &req);
+                json_object_set_string(root_object, "category_pages", category);
+            }
         }
         else if (category != NULL && strcmp(category, "media") == 0)
         {   // List of images

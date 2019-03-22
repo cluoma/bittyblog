@@ -48,18 +48,34 @@ typedef struct {
 /*
  * Queries for loading posts
  */
+// #define N_POSTS_QUERY "SELECT title, p.id as id, text, byline, datetime(time, 'unixepoch') AS time, thumbnail, tags \
+// FROM posts p \
+// INNER JOIN (SELECT * FROM pages WHERE name_id = @NAMEID) a ON p.page_id = a.id \
+// LEFT JOIN (SELECT tr.post_id, group_concat(t.tag, ', ') `tags` \
+// FROM tags t \
+// INNER JOIN tags_relate tr on (tr.tag_id = t.id) \
+// GROUP BY post_id \
+// ) t \
+// ON p.id = t.post_id \
+// WHERE p.visible = 1 \
+// ORDER BY time DESC \
+// limit @LIMIT offset @OFFSET"
 #define N_POSTS_QUERY "SELECT title, p.id as id, text, byline, datetime(time, 'unixepoch') AS time, thumbnail, tags \
 FROM posts p \
-INNER JOIN (SELECT * FROM pages WHERE name_id = @NAMEID) a ON p.page_id = a.id \
 LEFT JOIN (SELECT tr.post_id, group_concat(t.tag, ', ') `tags` \
-FROM tags t \
-INNER JOIN tags_relate tr on (tr.tag_id = t.id) \
-GROUP BY post_id \
-) t \
-ON p.id = t.post_id \
+	FROM tags t \
+	INNER JOIN tags_relate tr on (tr.tag_id = t.id) \
+	GROUP BY post_id \
+) t2 \
+ON p.id = t2.post_id \
 WHERE p.visible = 1 \
+AND (id IN (SELECT tr.post_id \
+	FROM tags t \
+	INNER JOIN tags_relate tr on (tr.tag_id = t.id) \
+	WHERE t.`tag` IN (SELECT t.tag FROM tags t INNER JOIN tags_pages_relate tr on (tr.tag_id = t.id) WHERE tr.page_id IN (SELECT id FROM pages WHERE name_id = ?)) \
+) OR page_id IN (SELECT id FROM pages WHERE name_id = ?)) \
 ORDER BY time DESC \
-limit @LIMIT offset @OFFSET"
+limit ? offset ?"
 #define POST_ID_QUERY "SELECT title, page_id, p.id as id, text, byline, datetime(time, 'unixepoch') AS time, thumbnail, tags \
 FROM posts p \
 LEFT JOIN (SELECT tr.post_id, group_concat(t.tag, ', ') `tags` \
@@ -176,7 +192,13 @@ WHERE p.id = @ID"
 /*
  * Queries for loading pages
  */
-#define LOAD_PAGES "SELECT id, name_id, name, style FROM pages"
+#define LOAD_PAGES "SELECT id, name_id, name, style, tags FROM pages p \
+LEFT JOIN (SELECT tr.page_id, group_concat(t.tag, ', ') `tags` \
+FROM tags t \
+INNER JOIN tags_pages_relate tr on (tr.tag_id = t.id) \
+GROUP BY page_id \
+) t \
+ON p.id = t.page_id"
 
 /*
  * Queries for checking user login info and setting session ids

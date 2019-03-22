@@ -240,7 +240,7 @@ vector_p * db_nposts(char* page_name_id, int count, int offset)
     vector_p * all_posts = vector_p_new();
     execute_query(load_posts_cb, all_posts,
                 N_POSTS_QUERY,
-                "sii", page_name_id,  count, offset);
+                "ssii", page_name_id, page_name_id,  count, offset);
     return all_posts;
 }
 vector_p * db_id(int id)
@@ -323,6 +323,13 @@ int db_pages_cb(sqlite3_stmt* st, void* a) {
                 sqlite3_column_bytes(st, 2));
         page->style = sqlite3_column_int(st, 3);
 
+        if (sqlite3_column_type(st, 4) != SQLITE_NULL) {
+            const char *tags = (char *) sqlite3_column_text(st, 4);
+            page->tags = tokenize_tags(tags, ",");
+        } else {
+            page->tags = NULL;
+        }
+
         bb_vec_add(pages, page);
     }
     return 0;
@@ -331,6 +338,7 @@ void db_pages_free_cb(void *d) {
     bb_page *page = (bb_page *)d;
     free(page->name);
     free(page->id_name);
+    if (page->tags != NULL) bb_vec_free(page->tags);
     free(page);
 }
 bb_vec * db_pages()

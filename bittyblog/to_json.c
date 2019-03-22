@@ -55,10 +55,22 @@ int bb_default_to_json(JSON_Object *root_object, bb_page_request *req) {
     for (int i = 0; i < req->pages->count; i++) {
         bb_page * p = (bb_page*)bb_vec_get(req->pages, i);
         JSON_Value *tmp_page = json_value_init_object();
+        json_object_set_number(json_value_get_object(tmp_page), "id", p->id);
         json_object_set_string(json_value_get_object(tmp_page), "id_name", p->id_name);
         json_object_set_string(json_value_get_object(tmp_page), "name", p->name);
+        char style[25]; sprintf(style, "%d", p->style);
+        json_object_set_string(json_value_get_object(tmp_page), "style", style);
         int t = strcmp(p->id_name, req->page_name) == 0 ? 1 : 0;
         json_object_set_boolean(json_value_get_object(tmp_page), "active", t);
+        // Add an array of tags to the post
+        bb_vec *tags = ((bb_page*)bb_vec_get(req->pages, i))->tags;
+        if (tags != NULL) {
+            JSON_Array *json_tags = json_value_get_array(json_value_init_array());
+            for (int j = 0; j < bb_vec_count(tags); j++) {
+                json_array_append_string(json_tags, (char*)bb_vec_get(tags, j));
+            }
+            json_object_set_value(json_value_get_object(tmp_page), "tags", json_array_get_wrapping_value(json_tags));
+        }
         json_array_append_value(pages, tmp_page);
     }
     json_object_set_value(root_object, "pages", json_array_get_wrapping_value(pages));
