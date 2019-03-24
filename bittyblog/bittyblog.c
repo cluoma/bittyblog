@@ -15,6 +15,7 @@
 #include "vec.h"
 #include "tinydir.h"
 #include "config.h"
+#include "db_interface.h"
 
 void bb_free(bb_page_request *req)
 {   

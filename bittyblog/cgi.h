@@ -24,12 +24,13 @@ typedef struct query_var {
 
 // Return a linked list of query string key-value pairs
 query_var * bb_cgi_get_query(const char *query_s);
-//query_var * bb_cgi_get_post_simple();
 query_var * bb_cgi_get_post(query_var *);
+
 char * bb_cgi_get_var(query_var *qv, const char* key);
 long bb_cgi_get_var_len(query_var *qv, const char* key);
 int bb_cgi_remove_var(query_var *qv, const char* key);
 int bb_cgi_add_var(query_var **qv, const char* key, const char* val, long val_len);
+
 char * bb_cgi_query_string(query_var *qv);
 char * bb_cgi_query_string_wo(query_var *qv, const char* key);
 

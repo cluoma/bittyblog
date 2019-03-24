@@ -106,11 +106,6 @@ int bb_nav_buttons_to_json(JSON_Object *root_object, bb_page_request *req) {
 void bb_posts_to_json(JSON_Object *root_object, bb_page_request *req, int format) {
     vector_p *entries = req->posts;
 
-    // if (entries->n < 1) {
-    //     json_object_set_number(root_object, "no_posts", 1);
-    //     return;
-    // }
-
     JSON_Array *posts = json_value_get_array(json_value_init_array());
     for (int i = 0; i < entries->n; i++) {
         JSON_Value *tmp_post = json_value_init_object();

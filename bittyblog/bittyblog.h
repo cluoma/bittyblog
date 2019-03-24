@@ -11,12 +11,33 @@
 
 #include "cgi.h"
 #include "vec.h"
-#include "db_interface.h"
 
 #define GET_ENV_VAR(X) ( (getenv(X) == NULL) ? "" : getenv(X) )
 
+#define POST 1
+#define PAGE 2
+
 #define PARSE_GET     1
 #define PARSE_POST    2
+
+typedef struct {
+    int p_id;
+    int page_id;
+    int visible;
+    char *page;
+    char *title;
+    char *text;
+    char *time;
+    char *byline;
+    char *extra;
+    char *thumbnail;
+    bb_vec *tags;
+} Post;
+
+typedef struct {
+    Post *p;
+    int n;
+} vector_p;
 
 // Style definitions
 enum bb_page_styles {

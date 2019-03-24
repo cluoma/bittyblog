@@ -15,25 +15,7 @@
 #include <sqlite3.h>
 
 #include "vec.h"
-
-typedef struct {
-    int p_id;
-    int page_id;
-    int visible;
-    char *page;
-    char *title;
-    char *text;
-    char *time;
-    char *byline;
-    char *extra;
-    char *thumbnail;
-    bb_vec *tags;
-} Post;
-
-typedef struct {
-    Post *p;
-    int n;
-} vector_p;
+#include "bittyblog.h"
 
 // Archives holds a list of months, years, and post counts
 // for those archives sidebar element
@@ -48,17 +30,17 @@ typedef struct {
 /*
  * Queries for loading posts
  */
-// #define N_POSTS_QUERY "SELECT title, p.id as id, text, byline, datetime(time, 'unixepoch') AS time, thumbnail, tags \
-// FROM posts p \
-// INNER JOIN (SELECT * FROM pages WHERE name_id = @NAMEID) a ON p.page_id = a.id \
-// LEFT JOIN (SELECT tr.post_id, group_concat(t.tag, ', ') `tags` \
-// FROM tags t \
-// INNER JOIN tags_relate tr on (tr.tag_id = t.id) \
-// GROUP BY post_id \
-// ) t \
-// ON p.id = t.post_id \
-// WHERE p.visible = 1 \
-// ORDER BY time DESC \
+// #define N_POSTS_QUERY "SELECT title, p.id as id, text, byline, datetime(time, 'unixepoch') AS time, thumbnail, tags 
+// FROM posts p 
+// INNER JOIN (SELECT * FROM pages WHERE name_id = @NAMEID) a ON p.page_id = a.id 
+// LEFT JOIN (SELECT tr.post_id, group_concat(t.tag, ', ') `tags` 
+// FROM tags t 
+// INNER JOIN tags_relate tr on (tr.tag_id = t.id) 
+// GROUP BY post_id 
+// ) t 
+// ON p.id = t.post_id 
+// WHERE p.visible = 1 
+// ORDER BY time DESC 
 // limit @LIMIT offset @OFFSET"
 #define N_POSTS_QUERY "SELECT title, p.id as id, text, byline, datetime(time, 'unixepoch') AS time, thumbnail, tags \
 FROM posts p \
@@ -69,13 +51,25 @@ LEFT JOIN (SELECT tr.post_id, group_concat(t.tag, ', ') `tags` \
 ) t2 \
 ON p.id = t2.post_id \
 WHERE p.visible = 1 \
-AND (id IN (SELECT tr.post_id \
+AND (id IN (SELECT post_id \
 	FROM tags t \
-	INNER JOIN tags_relate tr on (tr.tag_id = t.id) \
-	WHERE t.`tag` IN (SELECT t.tag FROM tags t INNER JOIN tags_pages_relate tr on (tr.tag_id = t.id) WHERE tr.page_id IN (SELECT id FROM pages WHERE name_id = ?)) \
-) OR page_id IN (SELECT id FROM pages WHERE name_id = ?)) \
+	INNER JOIN tags_relate t3 ON t.id = t3.tag_id \
+	INNER JOIN tags_pages_relate t2 ON t.id = t2.tag_id \
+	INNER JOIN pages p ON t2.page_id = p.id \
+	WHERE name_id = ?) \
+	OR page_id IN (SELECT id FROM pages WHERE name_id = ?)) \
 ORDER BY time DESC \
 limit ? offset ?"
+#define N_POSTS_COUNT_QUERY "SELECT COUNT(1) \
+FROM posts p \
+WHERE p.visible = 1 \
+AND (id IN (SELECT post_id \
+	FROM tags t \
+	INNER JOIN tags_relate t3 ON t.id = t3.tag_id \
+	INNER JOIN tags_pages_relate t2 ON t.id = t2.tag_id \
+	INNER JOIN pages p ON t2.page_id = p.id \
+	WHERE name_id = ?) \
+	OR page_id IN (SELECT id FROM pages WHERE name_id = ?))"
 #define POST_ID_QUERY "SELECT title, page_id, p.id as id, text, byline, datetime(time, 'unixepoch') AS time, thumbnail, tags \
 FROM posts p \
 LEFT JOIN (SELECT tr.post_id, group_concat(t.tag, ', ') `tags` \
@@ -171,7 +165,7 @@ ORDER BY time DESC"
  */
 #define ADMIN_ALL_POSTS_QUERY "SELECT a.name as page, p.id as id, title, datetime(time, 'unixepoch') as time, byline, thumbnail, visible, tags \
 FROM posts p \
-INNER JOIN pages a ON p.page_id = a.id \
+LEFT JOIN pages a ON p.page_id = a.id \
 LEFT JOIN (SELECT tr.post_id, group_concat(t.tag, ', ') `tags` \
 FROM tags t \
 INNER JOIN tags_relate tr on (tr.tag_id = t.id) \
@@ -226,9 +220,14 @@ vector_p * db_id(int id);
 // Admin posts interface
 vector_p * db_admin_all_posts_preview();
 vector_p * db_admin_id(int id);
+// Posts
 int db_new_post(Post* p);
 int db_update_post(Post* p);
 int db_delete_post(int post_id);
+// Pages
+int db_new_page(bb_page *p);
+int db_update_page(bb_page *p);
+int db_delete_page(int page_id);
 
 // Login session interface
 int verify_user(const char* user, const char* password);

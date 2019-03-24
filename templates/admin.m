@@ -18,15 +18,69 @@
     
     {{#category_pages}}
     <h1> Your Pages: </h1>
+
+    <!-- New Page Button -->
+    <form action="{{script_name}}" method="GET">
+        <input type="hidden" name="sid" value="{{sid}}" />
+        <input type="hidden" name="c" value="pages" />
+        <input type="hidden" name="a" value="new" />
+        <button type="submit">New Page</button><br>
+    </form> 
+
     <table>
-        <tr><th>ID</th><th>ID Name</th><th>Proper Name</th><th>Tags</th></tr>
+        <tr><th>Edit</th><th>ID</th><th>ID Name</th><th>Proper Name</th><th>Style</th><th>Tags</th><th>Delete</th></tr>
         {{#pages}}
         <tr>
-            <td>{{id}}</td><td>{{id_name}}</td><td>{{name}}</td><td>{{#tags}}{{.}}, {{/tags}}</td>
+            <td><a href="{{script_name}}?sid={{sid}}&page_id={{id}}">Edit</a></td>
+            <td>{{id}}</td><td>{{id_name}}</td><td>{{name}}</td><td>{{style}}</td><td>{{#tags}}{{.}}, {{/tags}}</td>
+            <td>
+                <form action="{{script_name}}?sid={{sid}}&c=pages&a=delete" method="POST">
+                <input type="hidden" name="page_id" value="{{id}}" />
+                <button type="submit">Delete</button>
+                </form>
+            </td>
         </tr>
         {{/pages}}
     </table>
     {{/category_pages}}
+
+    {{#category_new_pages}}
+    <form role="form" method="post" action="{{script_name}}?sid={{sid}}&c=pages&a=new">
+        <div class="form-group"><label for="page_name_id">URL Name ID:</label><textarea name="page_name_id" class="form-control" rows="1" id="page_name_id"></textarea></div><br>
+        <div class="form-group"><label for="page_name">Name:</label><textarea name="page_name" class="form-control" rows="1" id="page_name"></textarea></div><br>
+        <div class="form-group"><label for="page_tags">Tags:</label><textarea name="page_tags" class="form-control" rows="1" id="page_tags"></textarea></div>
+        <div>
+        <label for="page_style">Style</label>
+        <select name="page_style" id="page_style">
+            {{#styles}}
+            <option value="{{style}}" {{#selected}}selected{{/selected}}>{{style}}</option>
+            {{/styles}}
+        </select>
+        </div>
+        <button type="submit">Submit</button>
+    </form>
+    {{/category_new_pages}}
+
+    <!-- Different types of forms for posts edit, and create -->
+    {{#category_edit_pages}}
+    {{#pages}}
+    <form role="form" method="post" action="{{script_name}}?sid={{sid}}&c=pages&a=update">
+        <div class="form-group"><label for="page_name_id">URL Name ID:</label><textarea name="page_name_id" class="form-control" rows="1" id="page_name_id">{{id_name}}</textarea></div><br>
+        <div class="form-group"><label for="page_name">Name:</label><textarea name="page_name" class="form-control" rows="1" id="page_name">{{name}}</textarea></div><br>
+        <div class="form-group"><label for="page_tags">Tags:</label><textarea name="page_tags" class="form-control" rows="1" id="page_tags">{{#tags}}{{.}}, {{/tags}}</textarea></div>
+        <div>
+        <label for="page_style">Style</label>
+        <select name="page_style" id="page_style">
+            {{#styles}}
+            <option value="{{style}}" {{#selected}}selected{{/selected}}>{{style}}</option>
+            {{/styles}}
+        </select>
+        </div>
+        <button type="submit">Submit</button>
+        <div class="form-group hidden"><label for="page_id">Page ID:</label><textarea name="page_id" class="form-control" rows="1" id="page_id">{{id}}</textarea></div>
+    </form>
+    {{/pages}}
+    {{/category_edit_pages}}
 
 
     {{#category_posts}}

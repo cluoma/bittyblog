@@ -186,7 +186,7 @@ void fill_post(bb_page_request *req, Post *p) {
     // Tags
     if (bb_cgi_get_var(req->q_vars, "post_tags") != NULL) {
         p->tags = tokenize_tags(bb_cgi_get_var(req->q_vars, "post_tags"), ",");
-    } else {p->tags = NULL;}
+    } else {p->tags = tokenize_tags("", ",");}
 }
 
 void pages(JSON_Object *root_object, bb_page_request* req) {
@@ -197,7 +197,8 @@ void pages(JSON_Object *root_object, bb_page_request* req) {
         json_object_set_number(json_value_get_object(tmp), "id", ((bb_page*)bb_vec_get(req->pages, i))->id);
         json_object_set_string(json_value_get_object(tmp), "id_name", ((bb_page*)bb_vec_get(req->pages, i))->id_name);
         json_object_set_string(json_value_get_object(tmp), "name", ((bb_page*)bb_vec_get(req->pages, i))->name);
-        //json_object_set_string(json_value_get_object(tmp), "style", ((bb_page*)bb_vec_get(req->pages, i))->style);
+        char style[25]; sprintf(style, "%d", ((bb_page*)bb_vec_get(req->pages, i))->style);
+        json_object_set_string(json_value_get_object(tmp), "style", style);
         // Add an array of tags to the post
         bb_vec *tags = ((bb_page*)bb_vec_get(req->pages, i))->tags;
         if (tags != NULL) {
@@ -210,6 +211,95 @@ void pages(JSON_Object *root_object, bb_page_request* req) {
         json_array_append_value(pages, tmp);
     }
     json_object_set_value(root_object, "pages", json_array_get_wrapping_value(pages));
+}
+
+void new_page(JSON_Object *root_object, bb_page_request* req) {
+    // Add arrary of Styles to page
+    // This needs to be fixed
+    JSON_Array *json_styles = json_value_get_array(json_value_init_array());
+    for (int j = 0; j < 4; j++) {
+        JSON_Value *tmp2 = json_value_init_object();
+        char style[25]; sprintf(style, "%d", j);
+        json_object_set_string(json_value_get_object(tmp2), "style", style);
+        json_array_append_value(json_styles, tmp2);
+    }
+    json_object_set_value(root_object, "styles", json_array_get_wrapping_value(json_styles));
+}
+
+void edit_page(JSON_Object *root_object, bb_page_request* req, int page_id) {
+    // Add pages to JSON
+    JSON_Array *pages = json_value_get_array(json_value_init_array());
+    for (int i = 0; i < req->pages->count; i++) {
+        if (((bb_page*)bb_vec_get(req->pages, i))->id != page_id) continue;
+        JSON_Value *tmp = json_value_init_object();
+        json_object_set_number(json_value_get_object(tmp), "id", ((bb_page*)bb_vec_get(req->pages, i))->id);
+        json_object_set_string(json_value_get_object(tmp), "id_name", ((bb_page*)bb_vec_get(req->pages, i))->id_name);
+        json_object_set_string(json_value_get_object(tmp), "name", ((bb_page*)bb_vec_get(req->pages, i))->name);
+        char style[25]; sprintf(style, "%d", ((bb_page*)bb_vec_get(req->pages, i))->style);
+        json_object_set_string(json_value_get_object(tmp), "style", style);
+        // Add an array of tags to the page
+        bb_vec *tags = ((bb_page*)bb_vec_get(req->pages, i))->tags;
+        if (tags != NULL) {
+            JSON_Array *json_tags = json_value_get_array(json_value_init_array());
+            for (int j = 0; j < bb_vec_count(tags); j++) {
+                json_array_append_string(json_tags, (char*)bb_vec_get(tags, j));
+            }
+            json_object_set_value(json_value_get_object(tmp), "tags", json_array_get_wrapping_value(json_tags));
+        }
+        
+        // Add arrary of Styles to page
+        // This needs to be fixed
+        JSON_Array *json_styles = json_value_get_array(json_value_init_array());
+        for (int j = 0; j < 4; j++) {
+            JSON_Value *tmp2 = json_value_init_object();
+            char style[25]; sprintf(style, "%d", j);
+            json_object_set_string(json_value_get_object(tmp2), "style", style);
+            if (((bb_page*)bb_vec_get(req->pages, i))->style == j) {
+                json_object_set_boolean(json_value_get_object(tmp2), "selected", 1);
+            }
+            json_array_append_value(json_styles, tmp2);
+        }
+        json_object_set_value(json_value_get_object(tmp), "styles", json_array_get_wrapping_value(json_styles));
+
+        json_array_append_value(pages, tmp);
+    }
+    json_object_set_value(root_object, "pages", json_array_get_wrapping_value(pages));
+}
+
+void fill_page(bb_page_request *req, bb_page *p) {
+    int t;
+    // Page ID
+    if (bb_cgi_get_var(req->q_vars, "page_id") != NULL) {
+        errno = 0;
+        t = strtol(bb_cgi_get_var(req->q_vars, "page_id"), NULL, 10);
+        if (errno) {
+            p->id = -1;
+        } else {
+            p->id = t;
+        }
+    } else {p->id = -1;}
+    // Page Style
+    if (bb_cgi_get_var(req->q_vars, "page_style") != NULL) {
+        errno = 0;
+        t = strtol(bb_cgi_get_var(req->q_vars, "page_style"), NULL, 10);
+        if (errno) {
+            p->style = 0;
+        } else {
+            p->style = t;
+        }
+    } else {p->style = 0;}
+    // Page Name Id
+    if (bb_cgi_get_var(req->q_vars, "page_name_id") != NULL) {
+        p->id_name = bb_cgi_get_var(req->q_vars, "page_name_id");
+    } else {p->id_name = NULL;}
+    // Page Name
+    if (bb_cgi_get_var(req->q_vars, "page_name") != NULL) {
+        p->name = bb_cgi_get_var(req->q_vars, "page_name");
+    } else {p->name = NULL;}
+    // Tags
+    if (bb_cgi_get_var(req->q_vars, "page_tags") != NULL) {
+        p->tags = tokenize_tags(bb_cgi_get_var(req->q_vars, "page_tags"), ",");
+    } else {p->tags = tokenize_tags("", ",");}
 }
 
 void media_to_json(JSON_Object *root_object, bb_page_request* req) {
@@ -299,18 +389,10 @@ int main()
             Post p;
             fill_post(&req, &p);
             if (strcmp(action, "update") == 0) {
-                bb_vec *tags = p.tags;
-                for (int i = 0; tags != NULL && i < bb_vec_count(tags); i++) {
-                    fprintf(stderr, "TAG:: '%s'\n", (char*)bb_vec_get(tags, i));
-                }
                 db_update_post(&p);
                 bb_vec_free(p.tags);
                 printf("Successful :)<br>");
             } else if (strcmp(action, "new") == 0) {
-                bb_vec *tags = p.tags;
-                for (int i = 0; tags != NULL && i < bb_vec_count(tags); i++) {
-                    fprintf(stderr, "TAG:: '%s'\n", (char*)bb_vec_get(tags, i));
-                }
                 db_new_post(&p);
                 bb_vec_free(p.tags);
                 printf("Successful :)<br>");
@@ -319,17 +401,28 @@ int main()
                 if (bb_cgi_get_var(req.q_vars, "post_id") != NULL) {
                     int p_id = atoi(bb_cgi_get_var(req.q_vars, "post_id"));
                     db_delete_post(p_id);
+                    bb_vec_free(p.tags);
                     fprintf(stderr, "Attempted delete of Post ID: %d\n", p_id);
                 }
+                printf("Successful :)<br>");
             }
         } else if (strcmp(category, "pages") == 0) {
+            bb_page p;
+            fill_page(&req, &p);
             if (strcmp(action, "update") == 0) {
                 // Handle update of page
+                db_update_page(&p);
+                printf("Successful :)<br>");
             } else if (strcmp(action, "new") == 0) {
                 // Handle creation of new page
+                db_new_page(&p);
+                printf("Successful :)<br>");
             } else if (strcmp(action, "delete") == 0) {
                 // Handle deletion of page
+                db_delete_page(p.id);
+                printf("Successful :)<br>");
             }
+            bb_vec_free(p.tags);
         } else if (strcmp(category, "settings") == 0) {
             if (strcmp(action, "update") == 0) {
                 // Handle update settings
@@ -395,6 +488,9 @@ int main()
             if (action == NULL) {
                 pages(root_object, &req);
                 json_object_set_string(root_object, "category_pages", category);
+            } else if (strcmp(action, "new") == 0) {
+                new_page(root_object, &req);
+                json_object_set_string(root_object, "category_new_pages", category);
             }
         }
         else if (category != NULL && strcmp(category, "media") == 0)
@@ -403,11 +499,15 @@ int main()
             json_object_set_string(root_object, "category_media", category);
         }
         else if (bb_cgi_get_var(req.q_vars, "p_id") != NULL)
-        {            // Load single post to edit
+        {   // Load single post to edit
             edit_post(root_object, &req, atoi(bb_cgi_get_var(req.q_vars, "p_id")));
             json_object_set_boolean(root_object, "category_edit_posts", 1);
         }
-
+        else if (bb_cgi_get_var(req.q_vars, "page_id") != NULL)
+        {
+            edit_page(root_object, &req, atoi(bb_cgi_get_var(req.q_vars, "page_id")));
+            json_object_set_boolean(root_object, "category_edit_pages", 1);
+        }
     }
 
     char dir_base[1024];
