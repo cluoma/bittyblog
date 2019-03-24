@@ -50,6 +50,7 @@ void* bb_vec_get(bb_vec* vec, int i)
 
 void bb_vec_free(bb_vec* vec)
 {
+    // Free contents
     for (int i = 0; i < vec->count; i++)
     {
         if (vec->f == NULL)
@@ -59,6 +60,10 @@ void bb_vec_free(bb_vec* vec)
             vec->f(vec->data[i]);
         }
     }
-    free(vec->data);
+
+    // Free array
+    if (vec->data != NULL) free(vec->data);
+
+    // Free itself
     free(vec);
 }
