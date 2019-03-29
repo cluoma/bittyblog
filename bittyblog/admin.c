@@ -215,9 +215,8 @@ void pages(JSON_Object *root_object, bb_page_request* req) {
 
 void new_page(JSON_Object *root_object, bb_page_request* req) {
     // Add arrary of Styles to page
-    // This needs to be fixed
     JSON_Array *json_styles = json_value_get_array(json_value_init_array());
-    for (int j = 0; j < 4; j++) {
+    for (int j = 0; j < STYLE_LAST; j++) {
         JSON_Value *tmp2 = json_value_init_object();
         char style[25]; sprintf(style, "%d", j);
         json_object_set_string(json_value_get_object(tmp2), "style", style);
@@ -248,9 +247,8 @@ void edit_page(JSON_Object *root_object, bb_page_request* req, int page_id) {
         }
         
         // Add arrary of Styles to page
-        // This needs to be fixed
         JSON_Array *json_styles = json_value_get_array(json_value_init_array());
-        for (int j = 0; j < 4; j++) {
+        for (int j = 0; j < STYLE_LAST; j++) {
             JSON_Value *tmp2 = json_value_init_object();
             char style[25]; sprintf(style, "%d", j);
             json_object_set_string(json_value_get_object(tmp2), "style", style);

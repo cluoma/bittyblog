@@ -42,9 +42,10 @@ typedef struct {
 // Style definitions
 enum bb_page_styles {
     BLOG_FULL_POST  = 0,
-    BLOG_SMALL_POST = 1,
-    CONTACT         = 2,
-    MISSING         = 3
+    BLOG_SMALL_POST,
+    CONTACT,
+    MISSING,
+    STYLE_LAST
 };
 
 // Information on the type of webpage
