@@ -37,7 +37,6 @@ sqlite3 *open_database()
     if( (err = sqlite3_open(db_location, &db)) )
     {
         fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
-        fprintf(stderr, "ERRNO: %d\n", err);
         sqlite3_close(db);
         return NULL;
     }
@@ -51,6 +50,9 @@ sqlite3 *open_database()
  *  Execute query function takes arguments to prepare a statement then
  *  executes the query. A callback must be provided to deal with the results.
  * 
+ *  If NULL is supplied as the first argument, then a connection is opened
+ *  to execute the given query.
+ * 
  *  Arguments will be bound to the query in order, according to the types string
  *  types is a string consisting of:
  *  s: string char*
@@ -61,21 +63,21 @@ sqlite3 *open_database()
  * 
  *  If no callback is supplied, the query will be executed once using sqlite3_step
  */
-int execute_query(int (*callback)(sqlite3_stmt*, void*), void* data,
+int execute_query(sqlite3* db, int (*callback)(sqlite3_stmt*, void*), void* data,
                   const char* query, const char* types, ...) {
-    sqlite3 *db;
     sqlite3_stmt *results;
     va_list ap;
     int param_count;
     char type;
+    int db_con_supplied = db == NULL ? 0 : 1;
 
-    if (( db = open_database() ) == NULL) {
+    if (db == NULL && ( db = open_database() ) == NULL) {
         return 0;
     }
 
     if (sqlite3_prepare_v2(db, query, -1, &results, 0) != SQLITE_OK) {
         fprintf(stderr, "Could not prepare query: %s\n", sqlite3_errmsg(db));
-        sqlite3_close(db);
+        if (!db_con_supplied) sqlite3_close(db);
         return 0;
     }
 
@@ -119,19 +121,23 @@ int execute_query(int (*callback)(sqlite3_stmt*, void*), void* data,
         }
     } else {
         int rv = sqlite3_step(results);
-        if (rv != SQLITE_ROW && rv != SQLITE_DONE) {
+        if (rv == SQLITE_ROW && data != NULL) {
+            *(int*)data = sqlite3_column_int(results, 0);
+        } else if (rv == SQLITE_DONE) {
+
+        } else {
             fprintf(stderr, "SQL Execute Step return bad");
             goto bad;
         }
     }
 
     sqlite3_finalize(results);
-    sqlite3_close(db);
+    if (!db_con_supplied) sqlite3_close(db);
     return 1;
 
 bad:
     sqlite3_finalize(results);
-    sqlite3_close(db);
+    if (!db_con_supplied) sqlite3_close(db);
     return 0;
 }
 
@@ -206,7 +212,7 @@ int load_posts_cb(sqlite3_stmt *results, void* data) {
 vector_p * db_ntag(char* tag, int count, int offset)
 {
     vector_p * all_posts = vector_p_new();
-    execute_query(load_posts_cb, all_posts,
+    execute_query(NULL, load_posts_cb, all_posts,
                 N_TAG_QUERY,
                 "sii", tag, count, offset);
     return all_posts;
@@ -214,7 +220,7 @@ vector_p * db_ntag(char* tag, int count, int offset)
 vector_p * db_search(char* page_name_id, char *keyword)
 {   
     vector_p * all_posts = vector_p_new();
-    execute_query(load_posts_cb, all_posts,
+    execute_query(NULL, load_posts_cb, all_posts,
                 SEARCH_QUERY,
                 "ss", page_name_id, keyword);
     return all_posts;
@@ -222,7 +228,7 @@ vector_p * db_search(char* page_name_id, char *keyword)
 vector_p * db_nsearch(char* page_name_id, char *keyword, int count, int offset)
 {
     vector_p * all_posts = vector_p_new();
-    execute_query(load_posts_cb, all_posts,
+    execute_query(NULL, load_posts_cb, all_posts,
                 N_SEARCH_QUERY,
                 "ssii", page_name_id, keyword, count, offset);
     return all_posts;
@@ -230,7 +236,7 @@ vector_p * db_nsearch(char* page_name_id, char *keyword, int count, int offset)
 vector_p * db_monthyear(char* page_name_id, int month, int year)
 {
     vector_p * all_posts = vector_p_new();
-    execute_query(load_posts_cb, all_posts,
+    execute_query(NULL, load_posts_cb, all_posts,
                 MONTH_YEAR_QUERY,
                 "sii", page_name_id,  month, year);
     return all_posts;
@@ -238,7 +244,7 @@ vector_p * db_monthyear(char* page_name_id, int month, int year)
 vector_p * db_nposts(char* page_name_id, int count, int offset)
 {
     vector_p * all_posts = vector_p_new();
-    execute_query(load_posts_cb, all_posts,
+    execute_query(NULL, load_posts_cb, all_posts,
                 N_POSTS_QUERY,
                 "ssii", page_name_id, page_name_id,  count, offset);
     return all_posts;
@@ -246,7 +252,7 @@ vector_p * db_nposts(char* page_name_id, int count, int offset)
 vector_p * db_id(int id)
 {
     vector_p * all_posts = vector_p_new();
-    execute_query(load_posts_cb, all_posts,
+    execute_query(NULL, load_posts_cb, all_posts,
                 POST_ID_QUERY,
                 "i", id);
     return all_posts;
@@ -266,7 +272,7 @@ int db_count(char* page_name_id)
     int success = 0;
     int count = 0;
 
-    success = execute_query(db_count_cb, &count,
+    success = execute_query(NULL, db_count_cb, &count,
         //"SELECT COUNT(1) FROM posts p INNER JOIN (SELECT * FROM pages WHERE name_id = @NAMEID) a ON p.page_id = a.id WHERE p.visible = 1 ",
         N_POSTS_COUNT_QUERY,
         "ss", page_name_id, page_name_id);
@@ -280,7 +286,7 @@ int db_search_count(char* page_name_id, char* keyword) {
     int success = 0;
     int count = 0;
 
-    success = execute_query(db_count_cb, &count,
+    success = execute_query(NULL, db_count_cb, &count,
         SEARCH_COUNT_QUERY,
         "ss", page_name_id, keyword);
 
@@ -293,7 +299,7 @@ int db_tag_count(char* tag) {
     int success = 0;
     int count = 0;
 
-    success = execute_query(db_count_cb, &count,
+    success = execute_query(NULL, db_count_cb, &count,
         TAG_COUNT_QUERY,
         "s", tag);
 
@@ -347,7 +353,7 @@ bb_vec * db_pages()
     bb_vec *pages = malloc(sizeof(bb_vec));
     bb_vec_init(pages, db_pages_free_cb);
 
-    execute_query(db_pages_cb, pages, LOAD_PAGES, "");
+    execute_query(NULL, db_pages_cb, pages, LOAD_PAGES, "");
 
     return pages;
 }
@@ -358,49 +364,45 @@ bb_vec * db_pages()
  */
 vector_p * db_admin_all_posts_preview() {
     vector_p * all_posts = vector_p_new();
-    execute_query(load_posts_cb, all_posts,
+    execute_query(NULL, load_posts_cb, all_posts,
                 ADMIN_ALL_POSTS_QUERY,
                 "");
     return all_posts;
 }
 vector_p * db_admin_id(int id) {
     vector_p * all_posts = vector_p_new();
-    execute_query(load_posts_cb, all_posts,
+    execute_query(NULL, load_posts_cb, all_posts,
                 ADMIN_POST_ID_QUERY,
                 "i", id);
     return all_posts;
 }
 
-int db_update_tags(bb_vec *tags, int id, int relation) {
+/*
+ * Updates tags and relationships for a given page or post ID.
+ * First removes relationships, adds new tags, then builds new relationships
+ */
+int db_update_tags(sqlite3 *db, bb_vec *tags, int id, int relation) {
     int rc;
     sqlite3_stmt *results;
 
-    /* Connect to DB */
-    sqlite3 *db = open_database();
-    if (db == NULL) {
-        fprintf(stderr, "Failed to open DB connection.\n");
-        return 0;
-    }
-
     // Delete old relationships
-    char sql[200]; sql[0] = '\0';
+    char sql[255]; sql[0] = '\0';
     if (relation == POST) {
         strcat(sql, "DELETE FROM tags_relate WHERE post_id = ?");
     } else if (relation == PAGE) {
         strcat(sql, "DELETE FROM tags_pages_relate WHERE page_id = ?");
     } else {
-        fprintf(stderr, "Incorrect relationship supplied for");
+        fprintf(stderr, "Incorrect relationship supplied for Tag update\n");
         return 0;
     }
-    rc = sqlite3_prepare_v2(db, sql, -1, &results, 0);
-    sqlite3_bind_int(results, 1, id);
-    // Execute statement
-    sqlite3_step(results);
-    // Free statement, close DB
-    sqlite3_finalize(results);
+    rc = execute_query(db, NULL, NULL, sql, "i", id);
+    if (!rc) {
+        fprintf(stderr, "Couldn't remove tag relationships\n");
+        return 0;
+    }
 
+    // If we didn't get any new tags then we're done
     if (tags == NULL || bb_vec_count(tags) < 1) {
-        sqlite3_close(db);
         return 1;
     }
     
@@ -410,28 +412,34 @@ int db_update_tags(bb_vec *tags, int id, int relation) {
     strcat(sql, "INSERT OR IGNORE INTO tags (tag) VALUES");
     for (int i = 0; i < 20 && i < bb_vec_count(tags); i++) {
         strcat(sql, "(?)");
-        if (i+1 < 20 && i+1 < bb_vec_count(tags)) strcat(sql, ",");
+        if (i+1 < 20 && i+1 < bb_vec_count(tags))
+            strcat(sql, ",");
     }
 
-    /* Prepare sql statement */
+    // Prepare sql statement
     rc = sqlite3_prepare_v2(db, sql, -1, &results, 0);
-
-    // Bind input data to sql statement
     if (rc != SQLITE_OK) {
-        fprintf(stderr, "Failed to update table: %s\n", sqlite3_errmsg(db));
+        fprintf(stderr, "Failed to prepare statement: %s\n", sqlite3_errmsg(db));
         return 0;
     }
     // Bind all tags to prepared statement
     for (int i = 0; i < 20 && i < bb_vec_count(tags); i++) {
-        sqlite3_bind_text(results, i+1, (char*)bb_vec_get(tags, i), (int)strlen((char*)bb_vec_get(tags, i)), SQLITE_TRANSIENT);
+        if ( sqlite3_bind_text(results, i+1, (char*)bb_vec_get(tags, i), (int)strlen((char*)bb_vec_get(tags, i)), SQLITE_TRANSIENT) != SQLITE_OK) {
+            fprintf(stderr, "Failed binding tags to query\n");
+            sqlite3_finalize(results);
+            return 0;
+        }
     }
-    // Execute statement
-    sqlite3_step(results);
-    // Free statement, close DB
+    rc = sqlite3_step(results);
+    if (rc != SQLITE_DONE && rc != SQLITE_ROW) {
+        fprintf(stderr, "Couldn't add tags to database\n");
+        sqlite3_finalize(results);
+        return 0;
+    }
     sqlite3_finalize(results);
 
     /* Update relationship table */
-    // Insert new relationships
+    // Build query
     sql[0] = '\0';
     if (relation == POST) {
         strcat(sql, "INSERT OR IGNORE INTO tags_relate (tag_id, post_id) SELECT id, (SELECT id FROM posts WHERE id = ? LIMIT 1) FROM tags WHERE tag IN (");
@@ -443,288 +451,311 @@ int db_update_tags(bb_vec *tags, int id, int relation) {
     }
     for (int i = 0; i < 20 && i < bb_vec_count(tags); i++) {
         strcat(sql, "?");
-        if (i+1 < 20 && i+1 < bb_vec_count(tags)) strcat(sql, ",");
+        if (i+1 < 20 && i+1 < bb_vec_count(tags))
+            strcat(sql, ",");
     }
     strcat(sql, ")");
+    // Bind and execute
     rc = sqlite3_prepare_v2(db, sql, -1, &results, 0);
-    sqlite3_bind_int(results, 1, id);
-    for (int i = 0; i < 20 && i < bb_vec_count(tags); i++) {
-        sqlite3_bind_text(results, i+2, (char*)bb_vec_get(tags, i), (int)strlen((char*)bb_vec_get(tags, i)), SQLITE_TRANSIENT);
+    if (rc != SQLITE_OK) {
+        fprintf(stderr, "Failed to prepare statement: %s\n", sqlite3_errmsg(db));
+        return 0;
     }
-    // Execute statement
-    sqlite3_step(results);
-    // Free statement, close DB
+    if (sqlite3_bind_int(results, 1, id) != SQLITE_OK) {
+        fprintf(stderr, "Failed binding tags to query\n");
+        sqlite3_finalize(results);
+        return 0;
+    }
+    for (int i = 0; i < 20 && i < bb_vec_count(tags); i++) {
+        if ( sqlite3_bind_text(results, i+2, (char*)bb_vec_get(tags, i), (int)strlen((char*)bb_vec_get(tags, i)), SQLITE_TRANSIENT) != SQLITE_OK ) {
+            fprintf(stderr, "Failed binding tags to query\n");
+            sqlite3_finalize(results);
+            return 0;
+        }
+    }
+    rc = sqlite3_step(results);
+    if (rc != SQLITE_DONE && rc != SQLITE_ROW) {
+        fprintf(stderr, "Couldn't add tag relationships to database\n");
+        sqlite3_finalize(results);
+        return 0;
+    }
     sqlite3_finalize(results);
-
-    sqlite3_close(db);
 
     return 1;
 }
 
-int db_update_post(Post *p) {
-   /* SQLite variable declarations */
-   int rc;
-   sqlite3_stmt *results;
-
-   char *sql = "UPDATE posts SET page_id = ?, title = ?, text = ?, byline = ?, thumbnail = ?, visible = ? WHERE id = ?";
-
-   /* Connect to DB */
-   sqlite3 *db = open_database();
-   if (db == NULL) {
-       fprintf(stderr, "Failed to open DB connection.\n");
-       return 0;
-   }
-
-   /* Prepare sql statement */
-   rc = sqlite3_prepare_v2(db, sql, -1, &results, 0);
-
-   // Bind input data to sql statement
-   if (rc != SQLITE_OK) {
-       fprintf(stderr, "Failed to update table: %s\n", sqlite3_errmsg(db));
-       return 0;
-   }
-   sqlite3_bind_int(results, 1, p->page_id);
-   sqlite3_bind_text(results, 2, p->title, (int)strlen(p->title), SQLITE_TRANSIENT);
-   sqlite3_bind_text(results, 3, p->text, (int)strlen(p->text), SQLITE_TRANSIENT);
-   sqlite3_bind_text(results, 4, p->byline, (int)strlen(p->byline), SQLITE_TRANSIENT);
-   sqlite3_bind_text(results, 5, p->thumbnail, (int)strlen(p->thumbnail), SQLITE_TRANSIENT);
-   sqlite3_bind_int(results, 6, p->visible);
-   sqlite3_bind_int(results, 7, p->p_id);
-
-   // Execute statement
-   sqlite3_step(results);
-
-   // Free statement, close DB
-   sqlite3_finalize(results);
-   sqlite3_close(db);
-
-   // Update tags
-   db_update_tags(p->tags, p->p_id, POST);
-
-   return 1;
-}
-
 // Used to create a new post, post_id is automatically generated by the DB
 int db_new_post(Post *p) {
-    /* SQLite variable declarations */
+    int rc; // return values from sqlite3 functions
+    int new_id; // rowid of new post
+
+    // Connect to DB
+    sqlite3 *db = open_database();
+    if (db == NULL) {
+        return 0;
+    }
+
+    // Begin transaction so we can rollback if things go wrong
+    if (sqlite3_exec(db, "BEGIN TRANSACTION;", 0, 0, 0) != SQLITE_OK) {
+        fprintf(stderr, "Couldn't begin transaction.\n");
+        sqlite3_close(db);
+        return 0;
+    }
+
+    // Add post to database
+    rc = execute_query(db, NULL, NULL, ADMIN_NEW_POST, "issssi",
+                p->page_id, p->title, p->text, p->byline, p->thumbnail, p->visible);
+    if (!rc) {
+        fprintf(stderr, "Failed to add post to database\n");
+        sqlite3_close(db);
+        return 0;
+    }
+
+    // Get the Post ID of the newly added post
+    rc = execute_query(db, NULL, &new_id, ADMIN_ROWID_LAST_POST, "");
+    if (!rc) {
+        fprintf(stderr, "Couldn't get ROWID of newly added post\n");
+        sqlite3_close(db);
+        return 0;
+    }
+    rc = db_update_tags(db, p->tags, new_id, POST);
+    if (!rc) {
+        sqlite3_close(db);
+        return 0;
+    }
+
+    // Commit transaction
+    if (sqlite3_exec(db, "COMMIT;", 0, 0, 0) != SQLITE_OK) {
+        fprintf(stderr, "Couldn't commit transaction.\n");
+        sqlite3_close(db);
+        return 0;
+    }
+
+    sqlite3_close(db);
+    return 1;
+}
+
+int db_update_post(Post *p) {
     int rc;
-    sqlite3_stmt *results;
 
-    char *sql = "INSERT INTO posts (page_id, title, text, time, byline, thumbnail, visible) VALUES(?, ?, ?, (strftime('%s', 'now')), ?, ?, ?)";
-
-    /* Connect to DB */
+    // Connect to DB
     sqlite3 *db = open_database();
     if (db == NULL) {
         fprintf(stderr, "Failed to open DB connection.\n");
         return 0;
     }
 
-    /* Prepare sql statement */
-    rc = sqlite3_prepare_v2(db, sql, -1, &results, 0);
-
-    // Bind input data to sql statement
-    if (rc != SQLITE_OK) {
-        fprintf(stderr, "Failed to update table: %s\n", sqlite3_errmsg(db));
+    // Begin transaction so we can rollback if things go wrong
+    if (sqlite3_exec(db, "BEGIN TRANSACTION;", 0, 0, 0) != SQLITE_OK) {
+        fprintf(stderr, "Couldn't begin transaction.\n");
+        sqlite3_close(db);
         return 0;
     }
-    sqlite3_bind_int(results, 1, p->page_id);
-    sqlite3_bind_text(results, 2, p->title, (int)strlen(p->title), SQLITE_TRANSIENT);
-    sqlite3_bind_text(results, 3, p->text, (int)strlen(p->text), SQLITE_TRANSIENT);
-    sqlite3_bind_text(results, 4, p->byline, (int)strlen(p->byline), SQLITE_TRANSIENT);
-    sqlite3_bind_text(results, 5, p->thumbnail, (int)strlen(p->thumbnail), SQLITE_TRANSIENT);
-    sqlite3_bind_int(results, 6, p->visible);
 
-    // Execute statement
-    sqlite3_step(results);
-    // Free statement
-    sqlite3_finalize(results);
-
-    sql = "SELECT last_insert_rowid() FROM posts";
-    rc = sqlite3_prepare_v2(db, sql, -1, &results, 0);
-    if(sqlite3_step(results) == SQLITE_ROW)
-    {
-        p->p_id = sqlite3_column_int(results, 0);
-        sqlite3_finalize(results);
+    // Update post to database
+    rc = execute_query(db, NULL, NULL, ADMIN_UPDATE_POST, "issssii",
+                p->page_id, p->title, p->text, p->byline, p->thumbnail, p->visible, p->p_id);
+    if (!rc) {
+        fprintf(stderr, "Failed to update post to database\n");
         sqlite3_close(db);
-        // Update tags
-        db_update_tags(p->tags, p->p_id, POST);
-    } else {
-        sqlite3_finalize(results);
+        return 0;
+    }
+    rc = db_update_tags(db, p->tags, p->p_id, POST);
+    if (!rc) {
         sqlite3_close(db);
+        return 0;
     }
 
+    // Commit transaction
+    if (sqlite3_exec(db, "COMMIT;", 0, 0, 0) != SQLITE_OK) {
+        fprintf(stderr, "Couldn't commit transaction.\n");
+        sqlite3_close(db);
+        return 0;
+    }
+
+    sqlite3_close(db);
     return 1;
 }
 
 // Used to remove a post
 int db_delete_post(int post_id) {
-   /* SQLite variable declarations */
-   int rc;
-   sqlite3_stmt *results;
+    int rc;
 
-   char *sql = "DELETE FROM posts WHERE id = ?";
+    // Connect to DB
+    sqlite3 *db = open_database();
+    if (db == NULL) {
+        return 0;
+    }
 
-   /* Connect to DB */
-   sqlite3 *db = open_database();
-   if (db == NULL) {
-       fprintf(stderr, "Failed to open DB connection.\n");
-       return 0;
-   }
+    // Begin transaction so we can rollback if things go wrong
+    if (sqlite3_exec(db, "BEGIN TRANSACTION;", 0, 0, 0) != SQLITE_OK) {
+        fprintf(stderr, "Couldn't begin transaction.\n");
+        sqlite3_close(db);
+        return 0;
+    }
 
-   /* Prepare sql statement */
-   rc = sqlite3_prepare_v2(db, sql, -1, &results, 0);
+    // Remove post from database
+    rc = execute_query(db, NULL, NULL, ADMIN_DELETE_POST, "i", post_id);
+    if (!rc) {
+        fprintf(stderr, "Failed to delete post to database\n");
+        sqlite3_close(db);
+        return 0;
+    }
+    rc = db_update_tags(db, NULL, post_id, POST);
+    if (!rc) {
+        sqlite3_close(db);
+        return 0;
+    }
 
-   // Bind input data to sql statement
-   if (rc != SQLITE_OK) {
-       fprintf(stderr, "Failed to update table: %s\n", sqlite3_errmsg(db));
-       return 0;
-   }
-   sqlite3_bind_int(results, 1, post_id);
+    // Commit transaction
+    if (sqlite3_exec(db, "COMMIT;", 0, 0, 0) != SQLITE_OK) {
+        fprintf(stderr, "Couldn't commit transaction.\n");
+        sqlite3_close(db);
+        return 0;
+    }
 
-   // Execute statement
-   sqlite3_step(results);
-
-   // Free statement, close DB
-   sqlite3_finalize(results);
-   sqlite3_close(db);
-
-   return 1;
+    sqlite3_close(db);
+    return 1;
 }
 
 int db_new_page(bb_page *p) {
-    /* SQLite variable declarations */
+    int rc; // return values from sqlite3 functions
+    int new_id; // rowid of new post
+
+    // Connect to DB
+    sqlite3 *db = open_database();
+    if (db == NULL) {
+        return 0;
+    }
+
+    // Begin transaction so we can rollback if things go wrong
+    if (sqlite3_exec(db, "BEGIN TRANSACTION;", 0, 0, 0) != SQLITE_OK) {
+        fprintf(stderr, "Couldn't begin transaction.\n");
+        sqlite3_close(db);
+        return 0;
+    }
+
+    // Add post to database
+    rc = execute_query(db, NULL, NULL, ADMIN_NEW_PAGE, "ssi",
+                p->id_name, p->name, p->style);
+    if (!rc) {
+        fprintf(stderr, "Failed to add page to database\n");
+        sqlite3_close(db);
+        return 0;
+    }
+
+    // Get the Post ID of the newly added post
+    rc = execute_query(db, NULL, &new_id, ADMIN_ROWID_LAST_PAGE, "");
+    if (!rc) {
+        fprintf(stderr, "Couldn't get ROWID of newly added post\n");
+        sqlite3_close(db);
+        return 0;
+    }
+    rc = db_update_tags(db, p->tags, new_id, PAGE);
+    if (!rc) {
+        sqlite3_close(db);
+        return 0;
+    }
+
+    // Commit transaction
+    if (sqlite3_exec(db, "COMMIT;", 0, 0, 0) != SQLITE_OK) {
+        fprintf(stderr, "Couldn't commit transaction.\n");
+        sqlite3_close(db);
+        return 0;
+    }
+
+    sqlite3_close(db);
+    return 1;
+}
+
+int db_update_page(bb_page *p) {
     int rc;
-    sqlite3_stmt *results;
 
-    char *sql = "INSERT INTO pages (name_id, name, style) VALUES(?, ?, ?)";
-
-    /* Connect to DB */
+    // Connect to DB
     sqlite3 *db = open_database();
     if (db == NULL) {
         fprintf(stderr, "Failed to open DB connection.\n");
         return 0;
     }
 
-    /* Prepare sql statement */
-    rc = sqlite3_prepare_v2(db, sql, -1, &results, 0);
-
-    // Bind input data to sql statement
-    if (rc != SQLITE_OK) {
-        fprintf(stderr, "Failed to update table: %s\n", sqlite3_errmsg(db));
+    // Begin transaction so we can rollback if things go wrong
+    if (sqlite3_exec(db, "BEGIN TRANSACTION;", 0, 0, 0) != SQLITE_OK) {
+        fprintf(stderr, "Couldn't begin transaction.\n");
+        sqlite3_close(db);
         return 0;
     }
-    sqlite3_bind_text(results, 1, p->id_name, (int)strlen(p->id_name), SQLITE_TRANSIENT);
-    sqlite3_bind_text(results, 2, p->name, (int)strlen(p->name), SQLITE_TRANSIENT);
-    sqlite3_bind_int(results, 3, p->style);
 
-    // Execute statement
-    sqlite3_step(results);
-    // Free statement
-    sqlite3_finalize(results);
-
-    sql = "SELECT last_insert_rowid() FROM pages";
-    rc = sqlite3_prepare_v2(db, sql, -1, &results, 0);
-    if(sqlite3_step(results) == SQLITE_ROW)
-    {
-        p->id = sqlite3_column_int(results, 0);
-        sqlite3_finalize(results);
+    // Update post to database
+    rc = execute_query(db, NULL, NULL, ADMIN_UPDATE_PAGE, "ssii",
+                p->id_name, p->name, p->style, p->id);
+    if (!rc) {
+        fprintf(stderr, "Failed to update page to database\n");
         sqlite3_close(db);
-        // Update tags
-        db_update_tags(p->tags, p->id, PAGE);
-    } else {
-        sqlite3_finalize(results);
+        return 0;
+    }
+    rc = db_update_tags(db, p->tags, p->id, PAGE);
+    if (!rc) {
         sqlite3_close(db);
+        return 0;
     }
 
+    // Commit transaction
+    if (sqlite3_exec(db, "COMMIT;", 0, 0, 0) != SQLITE_OK) {
+        fprintf(stderr, "Couldn't commit transaction.\n");
+        sqlite3_close(db);
+        return 0;
+    }
+
+    sqlite3_close(db);
     return 1;
 }
 
-int db_update_page(bb_page *p) {
-    /* SQLite variable declarations */
-   int rc;
-   sqlite3_stmt *results;
-
-   char *sql = "UPDATE pages SET name_id = ?, name = ?, style = ? WHERE id = ?";
-
-   /* Connect to DB */
-   sqlite3 *db = open_database();
-   if (db == NULL) {
-       fprintf(stderr, "Failed to open DB connection.\n");
-       return 0;
-   }
-
-   /* Prepare sql statement */
-   rc = sqlite3_prepare_v2(db, sql, -1, &results, 0);
-
-   // Bind input data to sql statement
-   if (rc != SQLITE_OK) {
-       fprintf(stderr, "Failed to update table: %s\n", sqlite3_errmsg(db));
-       return 0;
-   }
-   sqlite3_bind_text(results, 1, p->id_name, (int)strlen(p->id_name), SQLITE_TRANSIENT);
-   sqlite3_bind_text(results, 2, p->name, (int)strlen(p->name), SQLITE_TRANSIENT);
-   sqlite3_bind_int(results, 3, p->style);
-   sqlite3_bind_int(results, 4, p->id);
-
-   // Execute statement
-   sqlite3_step(results);
-
-   // Free statement, close DB
-   sqlite3_finalize(results);
-   sqlite3_close(db);
-
-   // Update tags
-   db_update_tags(p->tags, p->id, PAGE);
-
-   return 1;
-}
-
 int db_delete_page(int page_id) {
-    /* SQLite variable declarations */
-   int rc;
-   sqlite3_stmt *results;
+    int rc;
 
-   char *sql = "DELETE FROM pages WHERE id = ?";
+    // Connect to DB
+    sqlite3 *db = open_database();
+    if (db == NULL) {
+        return 0;
+    }
 
-   /* Connect to DB */
-   sqlite3 *db = open_database();
-   if (db == NULL) {
-       fprintf(stderr, "Failed to open DB connection.\n");
-       return 0;
-   }
+    // Begin transaction so we can rollback if things go wrong
+    if (sqlite3_exec(db, "BEGIN TRANSACTION;", 0, 0, 0) != SQLITE_OK) {
+        fprintf(stderr, "Couldn't begin transaction.\n");
+        sqlite3_close(db);
+        return 0;
+    }
 
-   /* Prepare sql statement */
-   rc = sqlite3_prepare_v2(db, sql, -1, &results, 0);
+    // Remove post from database
+    rc = execute_query(db, NULL, NULL, ADMIN_DELETE_PAGE, "i", page_id);
+    if (!rc) {
+        fprintf(stderr, "Failed to delete page to database\n");
+        sqlite3_close(db);
+        return 0;
+    }
+    rc = db_update_tags(db, NULL, page_id, PAGE);
+    if (!rc) {
+        sqlite3_close(db);
+        return 0;
+    }
 
-   // Bind input data to sql statement
-   if (rc != SQLITE_OK) {
-       fprintf(stderr, "Failed to update table: %s\n", sqlite3_errmsg(db));
-       return 0;
-   }
-   sqlite3_bind_int(results, 1, page_id);
+    // NULL out Page Ids in Posts
+    rc = execute_query(db, NULL, NULL, ADMIN_DELETE_PAGE_NULL_POSTS, "i", page_id);
+    if (!rc) {
+        fprintf(stderr, "Failed to NULLify page ids in posts to database\n");
+        sqlite3_close(db);
+        return 0;
+    }
 
-   // Execute statement
-   sqlite3_step(results);
+    // Commit transaction
+    if (sqlite3_exec(db, "COMMIT;", 0, 0, 0) != SQLITE_OK) {
+        fprintf(stderr, "Couldn't commit transaction.\n");
+        sqlite3_close(db);
+        return 0;
+    }
 
-   // Free statement, close DB
-   sqlite3_finalize(results);
-
-   // Update posts
-   rc = sqlite3_prepare_v2(db, "UPDATE posts SET page_id = NULL WHERE page_id = ?", -1, &results, 0);
-   if (rc != SQLITE_OK) {
-       fprintf(stderr, "Failed to update table: %s\n", sqlite3_errmsg(db));
-       return 0;
-   }
-   sqlite3_bind_int(results, 1, page_id);
-   sqlite3_step(results);
-   sqlite3_finalize(results);
-
-   sqlite3_close(db);
-
-   // Update tags
-   db_update_tags(NULL, page_id, PAGE);
-
-   return 1;
+    sqlite3_close(db);
+    return 1;
 }
 
 Archives load_archives() {
@@ -787,7 +818,7 @@ int verify_user(const char* user, const char* password) {
     int success = 0;
     int exists = 0;
 
-    success = execute_query(verify_user_cb, &exists, CHECK_USER, "ss", user, password);
+    success = execute_query(NULL, verify_user_cb, &exists, CHECK_USER, "ss", user, password);
 
     if (success && exists)
         return 1;
@@ -799,7 +830,7 @@ int verify_session(const char* session) {
     int success = 0;
     int exists = 0;
 
-    success = execute_query(verify_user_cb, &exists, CHECK_SESSION, "s", session);
+    success = execute_query(NULL, verify_user_cb, &exists, CHECK_SESSION, "s", session);
 
     if (success && exists)
         return 1;
@@ -817,7 +848,7 @@ int set_user_session(const char* user, const char* password, const char* session
     int success = 0;
     int exists = 0;
 
-    success = execute_query(set_user_session_cb, &exists, SET_SESSION, "sss", session, user, password);
+    success = execute_query(NULL, set_user_session_cb, &exists, SET_SESSION, "sss", session, user, password);
 
     if (success && exists)
         return 1;

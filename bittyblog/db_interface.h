@@ -30,18 +30,6 @@ typedef struct {
 /*
  * Queries for loading posts
  */
-// #define N_POSTS_QUERY "SELECT title, p.id as id, text, byline, datetime(time, 'unixepoch') AS time, thumbnail, tags 
-// FROM posts p 
-// INNER JOIN (SELECT * FROM pages WHERE name_id = @NAMEID) a ON p.page_id = a.id 
-// LEFT JOIN (SELECT tr.post_id, group_concat(t.tag, ', ') `tags` 
-// FROM tags t 
-// INNER JOIN tags_relate tr on (tr.tag_id = t.id) 
-// GROUP BY post_id 
-// ) t 
-// ON p.id = t.post_id 
-// WHERE p.visible = 1 
-// ORDER BY time DESC 
-// limit @LIMIT offset @OFFSET"
 #define N_POSTS_QUERY "SELECT title, p.id as id, text, byline, datetime(time, 'unixepoch') AS time, thumbnail, tags \
 FROM posts p \
 LEFT JOIN (SELECT tr.post_id, group_concat(t.tag, ', ') `tags` \
@@ -182,6 +170,20 @@ GROUP BY post_id \
 ) t \
 ON p.id = t.post_id \
 WHERE p.id = @ID"
+
+/*
+ * Queries for adding, updating, and removing posts and pages
+ */
+#define ADMIN_NEW_POST "INSERT INTO posts (page_id, title, text, time, byline, thumbnail, visible) VALUES(?, ?, ?, (strftime('%s', 'now')), ?, ?, ?)"
+#define ADMIN_ROWID_LAST_POST "SELECT last_insert_rowid() FROM posts"
+#define ADMIN_UPDATE_POST "UPDATE posts SET page_id = ?, title = ?, text = ?, byline = ?, thumbnail = ?, visible = ? WHERE id = ?"
+#define ADMIN_DELETE_POST "DELETE FROM posts WHERE id = ?"
+
+#define ADMIN_NEW_PAGE "INSERT INTO pages (name_id, name, style) VALUES(?, ?, ?)"
+#define ADMIN_ROWID_LAST_PAGE "SELECT last_insert_rowid() FROM pages"
+#define ADMIN_UPDATE_PAGE "UPDATE pages SET name_id = ?, name = ?, style = ? WHERE id = ?"
+#define ADMIN_DELETE_PAGE "DELETE FROM pages WHERE id = ?"
+#define ADMIN_DELETE_PAGE_NULL_POSTS "UPDATE posts SET page_id = NULL WHERE page_id = ?"
 
 /*
  * Queries for loading pages

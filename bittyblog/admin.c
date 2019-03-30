@@ -391,9 +391,13 @@ int main()
                 bb_vec_free(p.tags);
                 printf("Successful :)<br>");
             } else if (strcmp(action, "new") == 0) {
-                db_new_post(&p);
+                int r = db_new_post(&p);
                 bb_vec_free(p.tags);
-                printf("Successful :)<br>");
+                if (r) {
+                    printf("Successful :)<br>");
+                } else {
+                    printf("Unsuccessful :)<br>");
+                }
             } else if (strcmp(action, "delete") == 0) {
                 // Handle deletion of a post
                 if (bb_cgi_get_var(req.q_vars, "post_id") != NULL) {
