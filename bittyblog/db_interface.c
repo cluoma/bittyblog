@@ -31,10 +31,9 @@ char * ENG_MONTH[] = {
 sqlite3 *open_database()
 {
     sqlite3 *db;
-    char *db_location = DB_PATH;
 
     int err;
-    if( (err = sqlite3_open(db_location, &db)) )
+    if( (err = sqlite3_open(DB_PATH, &db)) )
     {
         fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
         sqlite3_close(db);
@@ -45,6 +44,37 @@ sqlite3 *open_database()
         return db;
     }
 }
+sqlite3 *open_database_transaction()
+{
+    // Connect to DB
+    sqlite3 *db = open_database();
+    if (db == NULL) {
+        fprintf(stderr, "Failed to open DB connection.\n");
+        return NULL;
+    }
+
+    // Begin transaction so we can rollback if things go wrong
+    if (sqlite3_exec(db, "BEGIN TRANSACTION;", 0, 0, 0) != SQLITE_OK) {
+        fprintf(stderr, "Couldn't begin transaction.\n");
+        sqlite3_close(db);
+        return NULL;
+    }
+
+    return db;
+}
+int close_database_transaction(sqlite3 *db)
+{
+    // Commit transaction
+    if (sqlite3_exec(db, "COMMIT;", 0, 0, 0) != SQLITE_OK) {
+        fprintf(stderr, "Couldn't commit transaction.\n");
+        sqlite3_close(db);
+        return 0;
+    }
+    sqlite3_close(db);
+
+    return 1;
+}
+
 
 /*
  *  Execute query function takes arguments to prepare a statement then
@@ -492,15 +522,8 @@ int db_new_post(Post *p) {
     int new_id; // rowid of new post
 
     // Connect to DB
-    sqlite3 *db = open_database();
+    sqlite3 *db = open_database_transaction();
     if (db == NULL) {
-        return 0;
-    }
-
-    // Begin transaction so we can rollback if things go wrong
-    if (sqlite3_exec(db, "BEGIN TRANSACTION;", 0, 0, 0) != SQLITE_OK) {
-        fprintf(stderr, "Couldn't begin transaction.\n");
-        sqlite3_close(db);
         return 0;
     }
 
@@ -526,14 +549,10 @@ int db_new_post(Post *p) {
         return 0;
     }
 
-    // Commit transaction
-    if (sqlite3_exec(db, "COMMIT;", 0, 0, 0) != SQLITE_OK) {
-        fprintf(stderr, "Couldn't commit transaction.\n");
-        sqlite3_close(db);
+    // Close connection
+    if (!close_database_transaction(db)) {
         return 0;
     }
-
-    sqlite3_close(db);
     return 1;
 }
 
@@ -541,16 +560,8 @@ int db_update_post(Post *p) {
     int rc;
 
     // Connect to DB
-    sqlite3 *db = open_database();
+    sqlite3 *db = open_database_transaction();
     if (db == NULL) {
-        fprintf(stderr, "Failed to open DB connection.\n");
-        return 0;
-    }
-
-    // Begin transaction so we can rollback if things go wrong
-    if (sqlite3_exec(db, "BEGIN TRANSACTION;", 0, 0, 0) != SQLITE_OK) {
-        fprintf(stderr, "Couldn't begin transaction.\n");
-        sqlite3_close(db);
         return 0;
     }
 
@@ -568,14 +579,10 @@ int db_update_post(Post *p) {
         return 0;
     }
 
-    // Commit transaction
-    if (sqlite3_exec(db, "COMMIT;", 0, 0, 0) != SQLITE_OK) {
-        fprintf(stderr, "Couldn't commit transaction.\n");
-        sqlite3_close(db);
+    // Close connection
+    if (!close_database_transaction(db)) {
         return 0;
     }
-
-    sqlite3_close(db);
     return 1;
 }
 
@@ -584,15 +591,8 @@ int db_delete_post(int post_id) {
     int rc;
 
     // Connect to DB
-    sqlite3 *db = open_database();
+    sqlite3 *db = open_database_transaction();
     if (db == NULL) {
-        return 0;
-    }
-
-    // Begin transaction so we can rollback if things go wrong
-    if (sqlite3_exec(db, "BEGIN TRANSACTION;", 0, 0, 0) != SQLITE_OK) {
-        fprintf(stderr, "Couldn't begin transaction.\n");
-        sqlite3_close(db);
         return 0;
     }
 
@@ -609,14 +609,10 @@ int db_delete_post(int post_id) {
         return 0;
     }
 
-    // Commit transaction
-    if (sqlite3_exec(db, "COMMIT;", 0, 0, 0) != SQLITE_OK) {
-        fprintf(stderr, "Couldn't commit transaction.\n");
-        sqlite3_close(db);
+    // Close connection
+    if (!close_database_transaction(db)) {
         return 0;
     }
-
-    sqlite3_close(db);
     return 1;
 }
 
@@ -625,15 +621,8 @@ int db_new_page(bb_page *p) {
     int new_id; // rowid of new post
 
     // Connect to DB
-    sqlite3 *db = open_database();
+    sqlite3 *db = open_database_transaction();
     if (db == NULL) {
-        return 0;
-    }
-
-    // Begin transaction so we can rollback if things go wrong
-    if (sqlite3_exec(db, "BEGIN TRANSACTION;", 0, 0, 0) != SQLITE_OK) {
-        fprintf(stderr, "Couldn't begin transaction.\n");
-        sqlite3_close(db);
         return 0;
     }
 
@@ -659,14 +648,10 @@ int db_new_page(bb_page *p) {
         return 0;
     }
 
-    // Commit transaction
-    if (sqlite3_exec(db, "COMMIT;", 0, 0, 0) != SQLITE_OK) {
-        fprintf(stderr, "Couldn't commit transaction.\n");
-        sqlite3_close(db);
+    // Close connection
+    if (!close_database_transaction(db)) {
         return 0;
     }
-
-    sqlite3_close(db);
     return 1;
 }
 
@@ -674,16 +659,8 @@ int db_update_page(bb_page *p) {
     int rc;
 
     // Connect to DB
-    sqlite3 *db = open_database();
+    sqlite3 *db = open_database_transaction();
     if (db == NULL) {
-        fprintf(stderr, "Failed to open DB connection.\n");
-        return 0;
-    }
-
-    // Begin transaction so we can rollback if things go wrong
-    if (sqlite3_exec(db, "BEGIN TRANSACTION;", 0, 0, 0) != SQLITE_OK) {
-        fprintf(stderr, "Couldn't begin transaction.\n");
-        sqlite3_close(db);
         return 0;
     }
 
@@ -701,14 +678,10 @@ int db_update_page(bb_page *p) {
         return 0;
     }
 
-    // Commit transaction
-    if (sqlite3_exec(db, "COMMIT;", 0, 0, 0) != SQLITE_OK) {
-        fprintf(stderr, "Couldn't commit transaction.\n");
-        sqlite3_close(db);
+    // Close connection
+    if (!close_database_transaction(db)) {
         return 0;
     }
-
-    sqlite3_close(db);
     return 1;
 }
 
@@ -716,15 +689,8 @@ int db_delete_page(int page_id) {
     int rc;
 
     // Connect to DB
-    sqlite3 *db = open_database();
+    sqlite3 *db = open_database_transaction();
     if (db == NULL) {
-        return 0;
-    }
-
-    // Begin transaction so we can rollback if things go wrong
-    if (sqlite3_exec(db, "BEGIN TRANSACTION;", 0, 0, 0) != SQLITE_OK) {
-        fprintf(stderr, "Couldn't begin transaction.\n");
-        sqlite3_close(db);
         return 0;
     }
 
@@ -749,14 +715,10 @@ int db_delete_page(int page_id) {
         return 0;
     }
 
-    // Commit transaction
-    if (sqlite3_exec(db, "COMMIT;", 0, 0, 0) != SQLITE_OK) {
-        fprintf(stderr, "Couldn't commit transaction.\n");
-        sqlite3_close(db);
+    // Close connection
+    if (!close_database_transaction(db)) {
         return 0;
     }
-
-    sqlite3_close(db);
     return 1;
 }
 
