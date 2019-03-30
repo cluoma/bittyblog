@@ -56,7 +56,13 @@ void edit_post(JSON_Object *root_object, bb_page_request* req, int p_id) {
         json_object_set_number(json_value_get_object(tmp_post), "p_id", entries->p[0].p_id);
         json_object_set_string(json_value_get_object(tmp_post), "page", entries->p[0].page);
         json_object_set_string(json_value_get_object(tmp_post), "title", entries->p[0].title);
+
+        // Add text twice, once for text box and once for the preview
         json_object_set_string(json_value_get_object(tmp_post), "text", entries->p[0].text);
+        char *formatted_post_text = newline_to_html(entries->p[0].text);
+        json_object_set_string(json_value_get_object(tmp_post), "text_formatted", formatted_post_text);
+        free(formatted_post_text);
+
         json_object_set_string(json_value_get_object(tmp_post), "time", entries->p[0].time);
         json_object_set_string(json_value_get_object(tmp_post), "byline", entries->p[0].byline);
         json_object_set_string(json_value_get_object(tmp_post), "extra", entries->p[0].extra);
@@ -142,26 +148,13 @@ void new_post(JSON_Object *root_object, bb_page_request* req) {
 }
 
 void fill_post(bb_page_request *req, Post *p) {
-    int t;
     // Post ID
     if (bb_cgi_get_var(req->q_vars, "post_id") != NULL) {
-        errno = 0;
-        t = strtol(bb_cgi_get_var(req->q_vars, "post_id"), NULL, 10);
-        if (errno) {
-            p->p_id = -1;
-        } else {
-            p->p_id = t;
-        }
+        p->p_id = bb_strtol((char*)bb_cgi_get_var(req->q_vars, "post_id"), -1);
     } else {p->p_id = -1;}
     // Page ID
     if (bb_cgi_get_var(req->q_vars, "post_page") != NULL) {
-        errno = 0;
-        t = strtol(bb_cgi_get_var(req->q_vars, "post_page"), NULL, 10);
-        if (errno) {
-            p->page_id = -1;
-        } else {
-            p->page_id = t;
-        }
+        p->page_id = bb_strtol((char*)bb_cgi_get_var(req->q_vars, "post_page"), -1);
     } else {p->page_id = -1;}
     // Visible
     if (bb_cgi_get_var(req->q_vars, "post_visible") != NULL) {
@@ -171,6 +164,10 @@ void fill_post(bb_page_request *req, Post *p) {
     if (bb_cgi_get_var(req->q_vars, "post_title") != NULL) {
         p->title = bb_cgi_get_var(req->q_vars, "post_title");
     } else {p->title = NULL;}
+    // Time
+    if (bb_cgi_get_var(req->q_vars, "post_time") != NULL) {
+        p->time_r = bb_strtol((char*)bb_cgi_get_var(req->q_vars, "post_time"), time(NULL));
+    } else {p->time_r = time(NULL);}
     // Text
     if (bb_cgi_get_var(req->q_vars, "post_text") != NULL) {
         p->text = bb_cgi_get_var(req->q_vars, "post_text");
@@ -344,7 +341,7 @@ int main()
     if (sid == NULL || !verify_session(sid)) {
         // Start form
         printf("Content-Type: text/html\r\n\r\n");
-        printf(" <form action=\"%s\" method=\"GET\">\
+        printf(" <form action=\"%s\" method=\"POST\">\
         Username<br><input type=\"text\" name=\"username\" value=\"\"><br>\
         Password<br><input type=\"password\" name=\"password\" value=\"\"><br><br>\
         <input type=\"submit\" value=\"Submit\">\
@@ -401,7 +398,7 @@ int main()
             } else if (strcmp(action, "delete") == 0) {
                 // Handle deletion of a post
                 if (bb_cgi_get_var(req.q_vars, "post_id") != NULL) {
-                    int p_id = atoi(bb_cgi_get_var(req.q_vars, "post_id"));
+                    int p_id = (int)bb_strtol(bb_cgi_get_var(req.q_vars, "post_id"), -1);
                     db_delete_post(p_id);
                     bb_vec_free(p.tags);
                     fprintf(stderr, "Attempted delete of Post ID: %d\n", p_id);
@@ -502,12 +499,12 @@ int main()
         }
         else if (bb_cgi_get_var(req.q_vars, "p_id") != NULL)
         {   // Load single post to edit
-            edit_post(root_object, &req, atoi(bb_cgi_get_var(req.q_vars, "p_id")));
+            edit_post(root_object, &req, (int)bb_strtol(bb_cgi_get_var(req.q_vars, "p_id"), -1));
             json_object_set_boolean(root_object, "category_edit_posts", 1);
         }
         else if (bb_cgi_get_var(req.q_vars, "page_id") != NULL)
         {
-            edit_page(root_object, &req, atoi(bb_cgi_get_var(req.q_vars, "page_id")));
+            edit_page(root_object, &req, (int)bb_strtol(bb_cgi_get_var(req.q_vars, "page_id"), -1));
             json_object_set_boolean(root_object, "category_edit_pages", 1);
         }
     }

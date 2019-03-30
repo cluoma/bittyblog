@@ -115,6 +115,7 @@
     <!-- Different types of forms for posts edit, and create -->
     {{#category_edit_posts}}
     {{#posts}}
+    <!-- Edit -->
     <form role="form" method="post" action="{{script_name}}?sid={{sid}}&c=posts&a=update" enctype="multipart/form-data">
         <div>
         <label for="post_thumbnail">Thumbnail: </label>
@@ -134,12 +135,24 @@
         </div>
         <div class="form-group"><label for="post_title">Title:</label><textarea name="post_title" class="form-control" rows="1" id="post_title">{{title}}</textarea></div><br>
         <div class="form-group"><label for="post_byline">Byline:</label><textarea name="post_byline" class="form-control" rows="1" id="post_byline">{{byline}}</textarea></div><br>
+        <div class="form-group"><label for="post_time">Time:</label><textarea name="post_time" class="form-control" rows="1" id="post_time">{{time}}</textarea></div><br>
         <div class="form-group"><label for="post_text">Post:</label><textarea name="post_text" class="form-control" rows="20" id="post_text">{{text}}</textarea></div>
         <div class="form-group"><label for="post_tags">Tags:</label><textarea name="post_tags" class="form-control" rows="1" id="post_tags">{{#tags}}{{.}}, {{/tags}}</textarea></div>
         <div><input id="post_visible" type="checkbox" name="post_visible" value="Invisible" {{#visible}}checked{{/visible}}><label for="post_visible">Published</label><br></div>
         <div class="form-group hidden"><label for="post_id">Post ID:</label><textarea name="post_id" class="form-control" rows="1" id="post_id">{{p_id}}</textarea></div>
         <button type="submit">Submit</button>
     </form>
+    {{/posts}}
+    {{#posts}}
+    <br><br>
+    <h3>Preview:</h3><br>
+    <!-- Preview -->
+    <div class="blog-post">
+        <h2 class="blog-post-title">{{title}}</h2>
+        <p class="blog-post-meta">{{time}}</p>
+        <p>{{&text_formatted}}</p>
+        <p style="clear: both; margin: 0px;"><b>Tags:</b> {{#tags}}<a class="blog-post-tag" href="#">{{.}}</a> {{/tags}}</p>
+    </div>
     {{/posts}}
     {{/category_edit_posts}}
 
@@ -163,6 +176,7 @@
         </div>
         <div class="form-group"><label for="post_title">Title:</label><textarea name="post_title" class="form-control" rows="1" id="post_title"></textarea></div><br>
         <div class="form-group"><label for="post_byline">Byline:</label><textarea name="post_byline" class="form-control" rows="1" id="post_byline"></textarea></div><br>
+        <div class="form-group"><label for="post_time">Time:</label><textarea name="post_time" class="form-control" rows="1" id="post_time"></textarea></div><br>
         <div class="form-group"><label for="post_text">Post:</label><textarea name="post_text" class="form-control" rows="20" id="post_text"></textarea></div>
         <div class="form-group"><label for="post_tags">Tags:</label><textarea name="post_tags" class="form-control" rows="1" id="post_tags"></textarea></div>
         <div><input id="post_visible" type="checkbox" name="post_visible" value="Invisible" {{#visible}}checked{{/visible}}><label for="post_visible">Published</label><br></div>

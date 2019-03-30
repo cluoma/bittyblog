@@ -11,6 +11,7 @@
 
 #include "cgi.h"
 #include "vec.h"
+#include <time.h>
 
 #define GET_ENV_VAR(X) ( (getenv(X) == NULL) ? "" : getenv(X) )
 
@@ -28,6 +29,7 @@ typedef struct {
     char *title;
     char *text;
     char *time;
+    time_t time_r;
     char *byline;
     char *extra;
     char *thumbnail;
@@ -89,5 +91,6 @@ void bb_free(bb_page_request *);
 void bb_load_posts(bb_page_request *);
 bb_vec * bb_image_list(bb_page_request *);
 bb_vec * tokenize_tags(const char *str, const char * delim);
+long bb_strtol(char *str, long def);
 
 #endif /* bittyblog_h */

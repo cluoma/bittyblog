@@ -105,22 +105,22 @@ void bb_load_posts(bb_page_request *req) {
     if (id == NULL) {
         if (search != NULL)
         {
-            entries = db_nsearch(req->page->id_name, search, POSTS_PER_PAGE, (start == NULL ? 0 : atoi(start)));
+            entries = db_nsearch(req->page->id_name, search, POSTS_PER_PAGE, (start == NULL ? 0 : (int)bb_strtol(start, 0)));
             req->total_post_count = db_search_count(req->page->id_name, search);
         }
         else if (tag != NULL)
         {
-            entries = db_ntag(tag, POSTS_PER_PAGE, (start == NULL ? 0 : atoi(start)));
+            entries = db_ntag(tag, POSTS_PER_PAGE, (start == NULL ? 0 : (int)bb_strtol(start, 0)));
             req->total_post_count = db_tag_count(tag);
         }
         else if (start != NULL)
         {
-            entries = db_nposts(req->page->id_name, POSTS_PER_PAGE, atoi(start));
+            entries = db_nposts(req->page->id_name, POSTS_PER_PAGE, (int)bb_strtol(start, 0));
             req->total_post_count = db_count(req->page->id_name);
         }
         else if (month != NULL && year != NULL)
         {
-            entries = db_monthyear(req->page->id_name, atoi(month), atoi(year));
+            entries = db_monthyear(req->page->id_name, (int)bb_strtol(month, 1), (int)bb_strtol(year, 1));
         }
         else
         {
@@ -128,7 +128,7 @@ void bb_load_posts(bb_page_request *req) {
             req->total_post_count = db_count(req->page->id_name);
         }
     } else {
-        entries = db_id(atoi(id));
+        entries = db_id((int)bb_strtol(id, 1));
     }
     req->posts = entries;
 }
@@ -199,4 +199,19 @@ bb_vec * tokenize_tags(const char *str, const char * delim)
     free(str_cpy);
 
     return vec;
+}
+
+long bb_strtol(char *str, long def)
+{
+    long ret_val;
+    char *endptr;
+    errno = 0;
+    
+    ret_val = strtol(str, &endptr, 10);
+
+    if (errno || endptr == str) {
+        return def;
+    } else {
+        return ret_val;
+    }
 }

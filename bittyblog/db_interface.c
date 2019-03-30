@@ -97,7 +97,7 @@ int execute_query(sqlite3* db, int (*callback)(sqlite3_stmt*, void*), void* data
             break;
 
             case 'i':
-            if (sqlite3_bind_int(results, i, va_arg(ap, int)) != SQLITE_OK) {
+            if (sqlite3_bind_int64(results, i, va_arg(ap, long)) != SQLITE_OK) {
                 fprintf(stderr, "Could not bind int parameter: %s\n", sqlite3_errmsg(db));
                 va_end(ap);
                 goto bad;
@@ -503,8 +503,8 @@ int db_new_post(Post *p) {
     }
 
     // Add post to database
-    rc = execute_query(db, NULL, NULL, ADMIN_NEW_POST, "issssi",
-                p->page_id, p->title, p->text, p->byline, p->thumbnail, p->visible);
+    rc = execute_query(db, NULL, NULL, ADMIN_NEW_POST, "ississi",
+                p->page_id, p->title, p->text, p->time_r, p->byline, p->thumbnail, p->visible);
     if (!rc) {
         fprintf(stderr, "Failed to add post to database\n");
         sqlite3_close(db);
@@ -553,8 +553,8 @@ int db_update_post(Post *p) {
     }
 
     // Update post to database
-    rc = execute_query(db, NULL, NULL, ADMIN_UPDATE_POST, "issssii",
-                p->page_id, p->title, p->text, p->byline, p->thumbnail, p->visible, p->p_id);
+    rc = execute_query(db, NULL, NULL, ADMIN_UPDATE_POST, "isisssii",
+                p->page_id, p->title, p->time_r, p->text, p->byline, p->thumbnail, p->visible, p->p_id);
     if (!rc) {
         fprintf(stderr, "Failed to update post to database\n");
         sqlite3_close(db);

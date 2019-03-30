@@ -39,6 +39,7 @@ LEFT JOIN (SELECT tr.post_id, group_concat(t.tag, ', ') `tags` \
 ) t2 \
 ON p.id = t2.post_id \
 WHERE p.visible = 1 \
+AND datetime(time, 'unixepoch') <= datetime('now') \
 AND (id IN (SELECT post_id \
 	FROM tags t \
 	INNER JOIN tags_relate t3 ON t.id = t3.tag_id \
@@ -51,6 +52,7 @@ limit ? offset ?"
 #define N_POSTS_COUNT_QUERY "SELECT COUNT(1) \
 FROM posts p \
 WHERE p.visible = 1 \
+AND datetime(time, 'unixepoch') <= datetime('now') \
 AND (id IN (SELECT post_id \
 	FROM tags t \
 	INNER JOIN tags_relate t3 ON t.id = t3.tag_id \
@@ -66,7 +68,8 @@ INNER JOIN tags_relate tr on (tr.tag_id = t.id) \
 GROUP BY post_id \
 ) t \
 ON p.id = t.post_id \
-WHERE p.id = @ID AND p.visible = 1"
+WHERE p.id = @ID AND p.visible = 1 \
+AND datetime(time, 'unixepoch') <= datetime('now')"
 #define SEARCH_QUERY "SELECT title, p.id as id, text, byline, datetime(time, 'unixepoch') AS time, thumbnail, tags \
 FROM posts p \
 INNER JOIN (SELECT * FROM pages WHERE name_id = @NAMEID) a ON p.page_id = a.id \
@@ -78,6 +81,7 @@ GROUP BY post_id \
 ON p.id = t.post_id \
 WHERE lower(text) like lower('%' || @KEYWORD || '%') \
 AND p.visible = 1 \
+AND datetime(time, 'unixepoch') <= datetime('now') \
 ORDER BY time DESC"
 #define N_SEARCH_QUERY "SELECT title, p.id as id, text, byline, datetime(time, 'unixepoch') AS time, thumbnail, tags \
 FROM posts p \
@@ -90,6 +94,7 @@ GROUP BY post_id \
 ON p.id = t.post_id \
 WHERE lower(text) like lower('%' || @KEYWORD || '%') \
 AND p.visible = 1 \
+AND datetime(time, 'unixepoch') <= datetime('now') \
 ORDER BY time DESC \
 limit @LIMIT offset @OFFSET"
 #define SEARCH_COUNT_QUERY "SELECT COUNT(*) \
@@ -103,6 +108,7 @@ GROUP BY post_id \
 ON p.id = t.post_id \
 WHERE lower(text) like lower('%' || @KEYWORD || '%') AND \
 p.visible = 1 \
+AND datetime(time, 'unixepoch') <= datetime('now') \
 ORDER BY time DESC"
 #define N_TAG_QUERY "SELECT title, p.id as id, text, byline, datetime(time, 'unixepoch') AS time, thumbnail, tags \
 FROM posts p \
@@ -119,6 +125,7 @@ GROUP BY post_id \
 ) t2 \
 ON p.id = t2.post_id \
 WHERE p.visible = 1 \
+AND datetime(time, 'unixepoch') <= datetime('now') \
 ORDER BY time DESC \
 limit ? offset ?"
 #define TAG_COUNT_QUERY "SELECT COUNT(*) \
@@ -129,7 +136,8 @@ INNER JOIN tags_relate tr on (tr.tag_id = t.id) \
 WHERE t.`tag` = ? \
 ) t \
 ON p.id = t.post_id \
-WHERE p.visible = 1"
+WHERE p.visible = 1 \
+AND datetime(time, 'unixepoch') <= datetime('now')"
 #define MONTH_YEAR_QUERY "SELECT title, p.id as id, text, byline, datetime(time, 'unixepoch') AS time, thumbnail, tags \
 FROM posts p INNER JOIN (SELECT * FROM pages WHERE name_id = @NAMEID) a ON p.page_id = a.id \
 LEFT JOIN (SELECT tr.post_id, group_concat(t.tag, ', ') `tags` \
@@ -141,10 +149,13 @@ ON p.id = t.post_id \
 WHERE CAST(strftime('%m',time,'unixepoch') AS INT) = @MONTH \
 AND CAST(strftime('%Y',time,'unixepoch') AS INT) = @YEAR \
 AND p.visible = 1 \
+AND datetime(time, 'unixepoch') <= datetime('now') \
 ORDER BY time DESC"
 #define ARCHIVES "SELECT strftime('%m',time,'unixepoch') AS month, strftime('%Y',time,'unixepoch') AS year, COUNT(*) AS num_posts \
 FROM posts p \
-INNER JOIN (SELECT * FROM pages WHERE name_id = 'blog') a ON p.page_id = a.id WHERE p.visible = 1 \
+INNER JOIN (SELECT * FROM pages WHERE name_id = 'blog') a ON p.page_id = a.id \
+WHERE p.visible = 1 \
+AND datetime(time, 'unixepoch') <= datetime('now') \
 GROUP BY month, year \
 ORDER BY time DESC"
 
@@ -161,7 +172,8 @@ GROUP BY post_id \
 ) t \
 ON p.id = t.post_id \
 ORDER BY time DESC"
-#define ADMIN_POST_ID_QUERY "SELECT title, page_id, p.id as id, text, byline, datetime(time, 'unixepoch') AS time, thumbnail, visible, tags \
+// #define ADMIN_POST_ID_QUERY "SELECT title, page_id, p.id as id, text, byline, datetime(time, 'unixepoch') AS time, thumbnail, visible, tags
+#define ADMIN_POST_ID_QUERY "SELECT title, page_id, p.id as id, text, byline, time, thumbnail, visible, tags \
 FROM posts p \
 LEFT JOIN (SELECT tr.post_id, group_concat(t.tag, ', ') `tags` \
 FROM tags t \
@@ -174,9 +186,9 @@ WHERE p.id = @ID"
 /*
  * Queries for adding, updating, and removing posts and pages
  */
-#define ADMIN_NEW_POST "INSERT INTO posts (page_id, title, text, time, byline, thumbnail, visible) VALUES(?, ?, ?, (strftime('%s', 'now')), ?, ?, ?)"
+#define ADMIN_NEW_POST "INSERT INTO posts (page_id, title, text, time, byline, thumbnail, visible) VALUES(?, ?, ?, ?, ?, ?, ?)"
 #define ADMIN_ROWID_LAST_POST "SELECT last_insert_rowid() FROM posts"
-#define ADMIN_UPDATE_POST "UPDATE posts SET page_id = ?, title = ?, text = ?, byline = ?, thumbnail = ?, visible = ? WHERE id = ?"
+#define ADMIN_UPDATE_POST "UPDATE posts SET page_id = ?, title = ?, time = ?, text = ?, byline = ?, thumbnail = ?, visible = ? WHERE id = ?"
 #define ADMIN_DELETE_POST "DELETE FROM posts WHERE id = ?"
 
 #define ADMIN_NEW_PAGE "INSERT INTO pages (name_id, name, style) VALUES(?, ?, ?)"
