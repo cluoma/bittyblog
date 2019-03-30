@@ -22,9 +22,17 @@
 #include <d_string.h>
 #include <file.h>
 
+#ifdef _FCGI
+#include <fcgi_stdio.h>
+#endif
+
 int main()
 {
-    //for (int i =0; i < 10000; i++) {
+    
+#ifdef _FCGI
+    while(FCGI_Accept() >= 0 ) {
+#endif
+
     // Init page request
     bb_page_request req;
     bb_init(&req, PARSE_GET);
@@ -92,5 +100,8 @@ int main()
     json_value_free(root_value);
 
     bb_free(&req);
-    //}
+
+#ifdef _FCGI
+    }
+#endif
 }
