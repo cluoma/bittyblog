@@ -173,7 +173,7 @@ GROUP BY post_id \
 ON p.id = t.post_id \
 ORDER BY time DESC"
 // #define ADMIN_POST_ID_QUERY "SELECT title, page_id, p.id as id, text, byline, datetime(time, 'unixepoch') AS time, thumbnail, visible, tags
-#define ADMIN_POST_ID_QUERY "SELECT title, page_id, p.id as id, text, byline, time, thumbnail, visible, tags \
+#define ADMIN_POST_ID_QUERY "SELECT title, page_id, p.id as id, text, byline, datetime(time, 'unixepoch') as time, time as time_r, thumbnail, visible, tags \
 FROM posts p \
 LEFT JOIN (SELECT tr.post_id, group_concat(t.tag, ', ') `tags` \
 FROM tags t \

@@ -116,7 +116,7 @@ int execute_query(sqlite3* db, int (*callback)(sqlite3_stmt*, void*), void* data
     // Call callback function to deal with query results
     if (callback) {
         if ((*callback)(results, data)) {
-            fprintf(stderr, "SQL Execute Callback return bad");
+            fprintf(stderr, "SQL Execute Callback return bad: %s\n", sqlite3_errmsg(db));
             goto bad;
         }
     } else {
@@ -126,7 +126,7 @@ int execute_query(sqlite3* db, int (*callback)(sqlite3_stmt*, void*), void* data
         } else if (rv == SQLITE_DONE) {
 
         } else {
-            fprintf(stderr, "SQL Execute Step return bad");
+            fprintf(stderr, "SQL Execute Step return bad: %s\n", sqlite3_errmsg(db));
             goto bad;
         }
     }
@@ -179,6 +179,8 @@ int load_posts_cb(sqlite3_stmt *results, void* data) {
                 const int time_len = sqlite3_column_bytes(results, i);
                 post[n].time = calloc(time_len + 1, 1);
                 memcpy(post[n].time, time, time_len);
+            } else if (strcmp(col_name, "time_r") == 0) {
+                post[n].time_r = sqlite3_column_int64(results, i);
             } else if (strcmp(col_name, "byline") == 0) {
                 const char *byline = (char *) sqlite3_column_text(results, i);
                 const int byline_len = sqlite3_column_bytes(results, i);

@@ -135,7 +135,7 @@
         </div>
         <div class="form-group"><label for="post_title">Title:</label><textarea name="post_title" class="form-control" rows="1" id="post_title">{{title}}</textarea></div><br>
         <div class="form-group"><label for="post_byline">Byline:</label><textarea name="post_byline" class="form-control" rows="1" id="post_byline">{{byline}}</textarea></div><br>
-        <div class="form-group"><label for="post_time">Time:</label><textarea name="post_time" class="form-control" rows="1" id="post_time">{{time}}</textarea></div><br>
+        <div class="form-group"><label for="post_time">Time:</label><textarea name="post_time" class="form-control" rows="1" id="post_time">{{time_r}}</textarea></div><br>
         <div class="form-group"><label for="post_text">Post:</label><textarea name="post_text" class="form-control" rows="20" id="post_text">{{text}}</textarea></div>
         <div class="form-group"><label for="post_tags">Tags:</label><textarea name="post_tags" class="form-control" rows="1" id="post_tags">{{#tags}}{{.}}, {{/tags}}</textarea></div>
         <div><input id="post_visible" type="checkbox" name="post_visible" value="Invisible" {{#visible}}checked{{/visible}}><label for="post_visible">Published</label><br></div>

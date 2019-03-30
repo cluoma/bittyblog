@@ -64,6 +64,8 @@ void edit_post(JSON_Object *root_object, bb_page_request* req, int p_id) {
         free(formatted_post_text);
 
         json_object_set_string(json_value_get_object(tmp_post), "time", entries->p[0].time);
+        char time_r[25]; sprintf(time_r, "%ld", entries->p[0].time_r);
+        json_object_set_string(json_value_get_object(tmp_post), "time_r", time_r);
         json_object_set_string(json_value_get_object(tmp_post), "byline", entries->p[0].byline);
         json_object_set_string(json_value_get_object(tmp_post), "extra", entries->p[0].extra);
         json_object_set_string(json_value_get_object(tmp_post), "thumbnail", entries->p[0].thumbnail);
@@ -150,11 +152,11 @@ void new_post(JSON_Object *root_object, bb_page_request* req) {
 void fill_post(bb_page_request *req, Post *p) {
     // Post ID
     if (bb_cgi_get_var(req->q_vars, "post_id") != NULL) {
-        p->p_id = bb_strtol((char*)bb_cgi_get_var(req->q_vars, "post_id"), -1);
+        p->p_id = bb_strtol(bb_cgi_get_var(req->q_vars, "post_id"), -1);
     } else {p->p_id = -1;}
     // Page ID
     if (bb_cgi_get_var(req->q_vars, "post_page") != NULL) {
-        p->page_id = bb_strtol((char*)bb_cgi_get_var(req->q_vars, "post_page"), -1);
+        p->page_id = bb_strtol(bb_cgi_get_var(req->q_vars, "post_page"), -1);
     } else {p->page_id = -1;}
     // Visible
     if (bb_cgi_get_var(req->q_vars, "post_visible") != NULL) {
@@ -166,7 +168,7 @@ void fill_post(bb_page_request *req, Post *p) {
     } else {p->title = NULL;}
     // Time
     if (bb_cgi_get_var(req->q_vars, "post_time") != NULL) {
-        p->time_r = bb_strtol((char*)bb_cgi_get_var(req->q_vars, "post_time"), time(NULL));
+        p->time_r = bb_strtol(bb_cgi_get_var(req->q_vars, "post_time"), time(NULL));
     } else {p->time_r = time(NULL);}
     // Text
     if (bb_cgi_get_var(req->q_vars, "post_text") != NULL) {
@@ -262,29 +264,17 @@ void edit_page(JSON_Object *root_object, bb_page_request* req, int page_id) {
 }
 
 void fill_page(bb_page_request *req, bb_page *p) {
-    int t;
     // Page ID
     if (bb_cgi_get_var(req->q_vars, "page_id") != NULL) {
-        errno = 0;
-        t = strtol(bb_cgi_get_var(req->q_vars, "page_id"), NULL, 10);
-        if (errno) {
-            p->id = -1;
-        } else {
-            p->id = t;
-        }
+        p->id = bb_strtol(bb_cgi_get_var(req->q_vars, "page_id"), -1);
     } else {p->id = -1;}
     // Page Style
     if (bb_cgi_get_var(req->q_vars, "page_style") != NULL) {
-        errno = 0;
-        t = strtol(bb_cgi_get_var(req->q_vars, "page_style"), NULL, 10);
-        if (errno) {
-            p->style = 0;
-        } else {
-            p->style = t;
-        }
+        p->style = bb_strtol(bb_cgi_get_var(req->q_vars, "page_style"), 0);
     } else {p->style = 0;}
     // Page Name Id
     if (bb_cgi_get_var(req->q_vars, "page_name_id") != NULL) {
+        fprintf(stderr, "page_name_id: '%s'\n", bb_cgi_get_var(req->q_vars, "page_name_id"));
         p->id_name = bb_cgi_get_var(req->q_vars, "page_name_id");
     } else {p->id_name = NULL;}
     // Page Name
