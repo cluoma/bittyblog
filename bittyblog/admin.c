@@ -24,6 +24,10 @@
 #include <d_string.h>
 #include <file.h>
 
+#ifdef _FCGI
+#include <fcgi_stdio.h>
+#endif
+
 
 void posts(JSON_Object *root_object, bb_page_request* req) {
     vector_p * entries = db_admin_all_posts_preview();
@@ -304,6 +308,11 @@ void media_to_json(JSON_Object *root_object, bb_page_request* req) {
 
 int main()
 {
+
+#ifdef _FCGI
+    while(FCGI_Accept() >= 0 ) {
+#endif
+
     // Init page request
     bb_page_request req;
     bb_init(&req, PARSE_GET | PARSE_POST);
@@ -514,4 +523,9 @@ int main()
     json_value_free(root_value);
 
     bb_free(&req);
+
+#ifdef _FCGI
+    }
+#endif
+
 }
