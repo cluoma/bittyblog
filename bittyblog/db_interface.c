@@ -173,14 +173,13 @@ bad:
 
 // Load post data from database
 int load_posts_cb(sqlite3_stmt *results, void* data) {
-    vector_p *vp = (vector_p*)data;
+    bb_vec *vp = (bb_vec*)data;
 
     while(sqlite3_step(results) == SQLITE_ROW)
     {
         // Realloc memory for a new post
-        Post *post = (Post *) realloc(vp->p, sizeof(Post)*(1+vp->n));
-        int n = vp->n;
-        Post_init(&post[n]);
+        Post *post = malloc(sizeof(Post));
+        Post_init(post);
 
         int col_count = sqlite3_column_count(results);
         for (int i = 0; i < col_count; i++) {
@@ -188,34 +187,34 @@ int load_posts_cb(sqlite3_stmt *results, void* data) {
             if (strcmp(col_name, "title") == 0) {
                 const char *title = (char *) sqlite3_column_text(results, i);
                 const int title_len = sqlite3_column_bytes(results, i);
-                post[n].title = calloc(title_len + 1, 1);
-                memcpy(post[n].title, title, title_len);
+                post->title = calloc(title_len + 1, 1);
+                memcpy(post->title, title, title_len);
             } else if (strcmp(col_name, "id") == 0) {
-                post[n].p_id = sqlite3_column_int(results, i);
+                post->p_id = sqlite3_column_int(results, i);
             } else if (strcmp(col_name, "page_id") == 0) {
-                post[n].page_id = sqlite3_column_int(results, i);
+                post->page_id = sqlite3_column_int(results, i);
             } else if (strcmp(col_name, "page") == 0) {
                 const char *page_name = (char *) sqlite3_column_text(results, i);
                 const int page_name_len = sqlite3_column_bytes(results, i);
-                post[n].page = calloc(page_name_len + 1, 1);
-                memcpy(post[n].page, page_name, page_name_len);
+                post->page = calloc(page_name_len + 1, 1);
+                memcpy(post->page, page_name, page_name_len);
             } else if (strcmp(col_name, "text") == 0) {
                 const char *text = (char *) sqlite3_column_text(results, i);
                 const int text_len = sqlite3_column_bytes(results, i);
-                post[n].text = calloc(text_len + 1, 1);
-                memcpy(post[n].text, text, text_len);
+                post->text = calloc(text_len + 1, 1);
+                memcpy(post->text, text, text_len);
             } else if (strcmp(col_name, "time") == 0) {
                 const char *time = (char *) sqlite3_column_text(results, i);
                 const int time_len = sqlite3_column_bytes(results, i);
-                post[n].time = calloc(time_len + 1, 1);
-                memcpy(post[n].time, time, time_len);
+                post->time = calloc(time_len + 1, 1);
+                memcpy(post->time, time, time_len);
             } else if (strcmp(col_name, "time_r") == 0) {
-                post[n].time_r = sqlite3_column_int64(results, i);
+                post->time_r = sqlite3_column_int64(results, i);
             } else if (strcmp(col_name, "byline") == 0) {
                 const char *byline = (char *) sqlite3_column_text(results, i);
                 const int byline_len = sqlite3_column_bytes(results, i);
-                post[n].byline = calloc(byline_len + 1, 1);
-                memcpy(post[n].byline, byline, byline_len);
+                post->byline = calloc(byline_len + 1, 1);
+                memcpy(post->byline, byline, byline_len);
             }
             // else if (strcmp(col_name, "extra") == 0) {
                 
@@ -223,67 +222,72 @@ int load_posts_cb(sqlite3_stmt *results, void* data) {
             else if (strcmp(col_name, "thumbnail") == 0) {
                 const char *thumbnail   = (char *) sqlite3_column_text(results, i);
                 const int thumbnail_len = sqlite3_column_bytes(results, i);
-                post[n].thumbnail = calloc(thumbnail_len + 1, 1);
-                memcpy(post[n].thumbnail, thumbnail, thumbnail_len);
+                post->thumbnail = calloc(thumbnail_len + 1, 1);
+                memcpy(post->thumbnail, thumbnail, thumbnail_len);
             } else if (strcmp(col_name, "visible") == 0) {
-                post[n].visible = sqlite3_column_int(results, i);
+                post->visible = sqlite3_column_int(results, i);
             }
             else if (strcmp(col_name, "tags") == 0) {
                 if (sqlite3_column_type(results, i) != SQLITE_NULL) {
                     const char *tags = (char *) sqlite3_column_text(results, i);
-                    post[n].tags = tokenize_tags(tags, ",");
+                    post->tags = tokenize_tags(tags, ",");
                 }
             }
         }
-        vp->p = post;
-        vp->n ++;
+        bb_vec_add(vp, post);
     }
     return 0;
 }
 
-vector_p * db_ntag(char* tag, int count, int offset)
+bb_vec * db_ntag(char* tag, int count, int offset)
 {
-    vector_p * all_posts = vector_p_new();
+    bb_vec * all_posts = malloc(sizeof(bb_vec));
+    bb_vec_init(all_posts, Post_free);
     execute_query(NULL, load_posts_cb, all_posts,
                 N_TAG_QUERY,
                 "sii", tag, count, offset);
     return all_posts;
 }
-vector_p * db_search(char* page_name_id, char *keyword)
+bb_vec * db_search(char* page_name_id, char *keyword)
 {   
-    vector_p * all_posts = vector_p_new();
+    bb_vec * all_posts = malloc(sizeof(bb_vec));
+    bb_vec_init(all_posts, Post_free);
     execute_query(NULL, load_posts_cb, all_posts,
                 SEARCH_QUERY,
                 "ss", page_name_id, keyword);
     return all_posts;
 }
-vector_p * db_nsearch(char* page_name_id, char *keyword, int count, int offset)
+bb_vec * db_nsearch(char* page_name_id, char *keyword, int count, int offset)
 {
-    vector_p * all_posts = vector_p_new();
+    bb_vec * all_posts = malloc(sizeof(bb_vec));
+    bb_vec_init(all_posts, Post_free);
     execute_query(NULL, load_posts_cb, all_posts,
                 N_SEARCH_QUERY,
                 "ssii", page_name_id, keyword, count, offset);
     return all_posts;
 }
-vector_p * db_monthyear(char* page_name_id, int month, int year)
+bb_vec * db_monthyear(char* page_name_id, int month, int year)
 {
-    vector_p * all_posts = vector_p_new();
+    bb_vec * all_posts = malloc(sizeof(bb_vec));
+    bb_vec_init(all_posts, Post_free);
     execute_query(NULL, load_posts_cb, all_posts,
                 MONTH_YEAR_QUERY,
                 "sii", page_name_id,  month, year);
     return all_posts;
 }
-vector_p * db_nposts(char* page_name_id, int count, int offset)
+bb_vec * db_nposts(char* page_name_id, int count, int offset)
 {
-    vector_p * all_posts = vector_p_new();
+    bb_vec * all_posts = malloc(sizeof(bb_vec));
+    bb_vec_init(all_posts, Post_free);
     execute_query(NULL, load_posts_cb, all_posts,
                 N_POSTS_QUERY,
                 "ssii", page_name_id, page_name_id,  count, offset);
     return all_posts;
 }
-vector_p * db_id(int id)
+bb_vec * db_id(int id)
 {
-    vector_p * all_posts = vector_p_new();
+    bb_vec * all_posts = malloc(sizeof(bb_vec));
+    bb_vec_init(all_posts, Post_free);
     execute_query(NULL, load_posts_cb, all_posts,
                 POST_ID_QUERY,
                 "i", id);
@@ -394,15 +398,17 @@ bb_vec * db_pages()
 /*
  * Admin interface functions
  */
-vector_p * db_admin_all_posts_preview() {
-    vector_p * all_posts = vector_p_new();
+bb_vec * db_admin_all_posts_preview() {
+    bb_vec * all_posts = malloc(sizeof(bb_vec));
+    bb_vec_init(all_posts, Post_free);
     execute_query(NULL, load_posts_cb, all_posts,
                 ADMIN_ALL_POSTS_QUERY,
                 "");
     return all_posts;
 }
-vector_p * db_admin_id(int id) {
-    vector_p * all_posts = vector_p_new();
+bb_vec * db_admin_id(int id) {
+    bb_vec * all_posts = malloc(sizeof(bb_vec));
+    bb_vec_init(all_posts, Post_free);
     execute_query(NULL, load_posts_cb, all_posts,
                 ADMIN_POST_ID_QUERY,
                 "i", id);
@@ -823,6 +829,7 @@ int set_user_session(const char* user, const char* password, const char* session
 void Post_init(Post* p) {
     p->p_id = -1;
     p->page_id = -1;
+    p->time_r = 0;
     p->page = NULL;
     p->title = NULL;
     p->text = NULL;
@@ -834,39 +841,16 @@ void Post_init(Post* p) {
     p->tags = NULL;
 }
 
-vector_p * vector_p_new()
-{
-    vector_p *vp = malloc(sizeof(vector_p));
-    vp->p = NULL;
-    vp->n = 0;
-
-    return vp;
-}
-
-void vector_p_append(vector_p *vp, Post *p)
-{
-    if( p == NULL ) return;
-
-    vp->p = realloc(vp->p, sizeof(Post) * (vp->n+1) );
-    vp->p[vp->n] = *p;
-    vp->n = vp->n + 1;
-}
-
-void vector_p_free(vector_p *vp)
-{
-    for( int i = 0; i < vp->n; i++ )
-    {
-        if (vp->p[i].page != NULL) free(vp->p[i].page);
-        if (vp->p[i].title != NULL) free(vp->p[i].title);
-        if (vp->p[i].text != NULL) free(vp->p[i].text);
-        if (vp->p[i].time != NULL) free(vp->p[i].time);
-        if (vp->p[i].byline != NULL) free(vp->p[i].byline);
-        if (vp->p[i].extra != NULL) free(vp->p[i].extra);
-        if (vp->p[i].thumbnail != NULL) free(vp->p[i].thumbnail);
-        if (vp->p[i].tags != NULL) bb_vec_free(vp->p[i].tags);
-    }
-    free( vp->p );
-    free( vp );
+void Post_free(Post* p) {
+    if (p->page != NULL)        free(p->page);
+    if (p->title != NULL)       free(p->title);
+    if (p->text != NULL)        free(p->text);
+    if (p->time != NULL)        free(p->time);
+    if (p->byline != NULL)      free(p->byline);
+    if (p->extra != NULL)       free(p->extra);
+    if (p->thumbnail != NULL)   free(p->thumbnail);
+    if (p->tags != NULL)        bb_vec_free(p->tags);
+    free(p);
 }
 
 void free_archives(Archives *archives)

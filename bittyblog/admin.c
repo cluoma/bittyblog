@@ -30,52 +30,54 @@
 
 
 void posts(JSON_Object *root_object, bb_page_request* req) {
-    vector_p * entries = db_admin_all_posts_preview();
+    bb_vec * entries = db_admin_all_posts_preview();
 
     JSON_Array *posts = json_value_get_array(json_value_init_array());
-    for (int i = 0; i < entries->n; i++) {
+    for (int i = 0; i < bb_vec_count(entries); i++) {
+        Post *p = (Post*)bb_vec_get(entries, i);
         JSON_Value *tmp_post = json_value_init_object();
-        json_object_set_number(json_value_get_object(tmp_post), "p_id", entries->p[i].p_id);
-        json_object_set_string(json_value_get_object(tmp_post), "page", entries->p[i].page);
-        json_object_set_string(json_value_get_object(tmp_post), "title", entries->p[i].title);
-        json_object_set_string(json_value_get_object(tmp_post), "time", entries->p[i].time);
-        json_object_set_string(json_value_get_object(tmp_post), "byline", entries->p[i].byline);
-        json_object_set_string(json_value_get_object(tmp_post), "thumbnail", entries->p[i].thumbnail);
-        json_object_set_number(json_value_get_object(tmp_post), "visible", entries->p[i].visible);
+        json_object_set_number(json_value_get_object(tmp_post), "p_id", p->p_id);
+        json_object_set_string(json_value_get_object(tmp_post), "page", p->page);
+        json_object_set_string(json_value_get_object(tmp_post), "title", p->title);
+        json_object_set_string(json_value_get_object(tmp_post), "time", p->time);
+        json_object_set_string(json_value_get_object(tmp_post), "byline", p->byline);
+        json_object_set_string(json_value_get_object(tmp_post), "thumbnail", p->thumbnail);
+        json_object_set_number(json_value_get_object(tmp_post), "visible", p->visible);
         json_array_append_value(posts, tmp_post);
     }
     json_object_set_value(root_object, "posts", json_array_get_wrapping_value(posts));
 
-    vector_p_free(entries);
+    bb_vec_free(entries);
 }
 
 void edit_post(JSON_Object *root_object, bb_page_request* req, int p_id) {
-    vector_p * entries = db_admin_id(p_id);
+    bb_vec * entries = db_admin_id(p_id);
     bb_vec * image_list = bb_image_list(req);
 
     // Add post to JSON
-    if (entries->n > 0) {
+    if (bb_vec_count(entries) > 0) {
+        Post *p = (Post*)bb_vec_get(entries, 0);
         JSON_Array *posts = json_value_get_array(json_value_init_array());
         JSON_Value *tmp_post = json_value_init_object();
-        json_object_set_number(json_value_get_object(tmp_post), "p_id", entries->p[0].p_id);
-        json_object_set_string(json_value_get_object(tmp_post), "page", entries->p[0].page);
-        json_object_set_string(json_value_get_object(tmp_post), "title", entries->p[0].title);
+        json_object_set_number(json_value_get_object(tmp_post), "p_id", p->p_id);
+        json_object_set_string(json_value_get_object(tmp_post), "page", p->page);
+        json_object_set_string(json_value_get_object(tmp_post), "title", p->title);
 
         // Add text twice, once for text box and once for the preview
-        json_object_set_string(json_value_get_object(tmp_post), "text", entries->p[0].text);
-        char *formatted_post_text = newline_to_html(entries->p[0].text);
+        json_object_set_string(json_value_get_object(tmp_post), "text", p->text);
+        char *formatted_post_text = newline_to_html(p->text);
         json_object_set_string(json_value_get_object(tmp_post), "text_formatted", formatted_post_text);
         free(formatted_post_text);
 
-        json_object_set_string(json_value_get_object(tmp_post), "time", entries->p[0].time);
-        char time_r[25]; sprintf(time_r, "%ld", entries->p[0].time_r);
+        json_object_set_string(json_value_get_object(tmp_post), "time", p->time);
+        char time_r[25]; sprintf(time_r, "%ld", p->time_r);
         json_object_set_string(json_value_get_object(tmp_post), "time_r", time_r);
-        json_object_set_string(json_value_get_object(tmp_post), "byline", entries->p[0].byline);
-        json_object_set_string(json_value_get_object(tmp_post), "extra", entries->p[0].extra);
-        json_object_set_string(json_value_get_object(tmp_post), "thumbnail", entries->p[0].thumbnail);
-        json_object_set_number(json_value_get_object(tmp_post), "visible", entries->p[0].visible);
+        json_object_set_string(json_value_get_object(tmp_post), "byline", p->byline);
+        json_object_set_string(json_value_get_object(tmp_post), "extra", p->extra);
+        json_object_set_string(json_value_get_object(tmp_post), "thumbnail", p->thumbnail);
+        json_object_set_number(json_value_get_object(tmp_post), "visible", p->visible);
         // Add an array of tags to the post
-        bb_vec *tags = entries->p[0].tags;
+        bb_vec *tags = p->tags;
         if (tags != NULL) {
             JSON_Array *json_tags = json_value_get_array(json_value_init_array());
             for (int j = 0; j < bb_vec_count(tags); j++) {
@@ -85,43 +87,42 @@ void edit_post(JSON_Object *root_object, bb_page_request* req, int p_id) {
         }
         json_array_append_value(posts, tmp_post);
         json_object_set_value(root_object, "posts", json_array_get_wrapping_value(posts));
-    }
-    
 
-    // Add image list to JSON
-    if (image_list->count > 0) {
-        JSON_Array *images = json_value_get_array(json_value_init_array());
-        for (int i = 0; i < image_list->count; i++) {
+        // Add image list to JSON
+        if (image_list->count > 0) {
+            JSON_Array *images = json_value_get_array(json_value_init_array());
+            for (int i = 0; i < image_list->count; i++) {
                 JSON_Value *tmp = json_value_init_object();
                 json_object_set_string(json_value_get_object(tmp), "filename", (char*)bb_vec_get(image_list, i));
-            if (strcmp((char*)bb_vec_get(image_list, i), entries->p[0].thumbnail) == 0) {
+                if (strcmp((char*)bb_vec_get(image_list, i), p->thumbnail) == 0) {
+                    json_object_set_boolean(json_value_get_object(tmp), "selected", 1);
+                } else {
+                    json_object_set_boolean(json_value_get_object(tmp), "selected", 0);
+                }
+                    json_array_append_value(images, tmp);
+                }
+            json_object_set_value(root_object, "images", json_array_get_wrapping_value(images));
+        }
+        bb_vec_free(image_list);
+
+        // Add pages to JSON
+        JSON_Array *pages = json_value_get_array(json_value_init_array());
+        for (int i = 0; i < req->pages->count; i++) {
+            JSON_Value *tmp = json_value_init_object();
+            json_object_set_number(json_value_get_object(tmp), "id", ((bb_page*)bb_vec_get(req->pages, i))->id);
+            json_object_set_string(json_value_get_object(tmp), "id_name", ((bb_page*)bb_vec_get(req->pages, i))->id_name);
+            json_object_set_string(json_value_get_object(tmp), "name", ((bb_page*)bb_vec_get(req->pages, i))->name);
+            if (((bb_page*)bb_vec_get(req->pages, i))->id == p->page_id) {
                 json_object_set_boolean(json_value_get_object(tmp), "selected", 1);
             } else {
                 json_object_set_boolean(json_value_get_object(tmp), "selected", 0);
             }
-            json_array_append_value(images, tmp);
+            json_array_append_value(pages, tmp);
         }
-        json_object_set_value(root_object, "images", json_array_get_wrapping_value(images));
-    }
-    bb_vec_free(image_list);
+        json_object_set_value(root_object, "pages", json_array_get_wrapping_value(pages));
 
-    // Add pages to JSON
-    JSON_Array *pages = json_value_get_array(json_value_init_array());
-    for (int i = 0; i < req->pages->count; i++) {
-        JSON_Value *tmp = json_value_init_object();
-        json_object_set_number(json_value_get_object(tmp), "id", ((bb_page*)bb_vec_get(req->pages, i))->id);
-        json_object_set_string(json_value_get_object(tmp), "id_name", ((bb_page*)bb_vec_get(req->pages, i))->id_name);
-        json_object_set_string(json_value_get_object(tmp), "name", ((bb_page*)bb_vec_get(req->pages, i))->name);
-        if (((bb_page*)bb_vec_get(req->pages, i))->id == entries->p[0].page_id) {
-            json_object_set_boolean(json_value_get_object(tmp), "selected", 1);
-        } else {
-            json_object_set_boolean(json_value_get_object(tmp), "selected", 0);
-        }
-        json_array_append_value(pages, tmp);
+        bb_vec_free(entries);
     }
-    json_object_set_value(root_object, "pages", json_array_get_wrapping_value(pages));
-
-    vector_p_free(entries);
 }
 
 void new_post(JSON_Object *root_object, bb_page_request* req) {
@@ -317,18 +318,19 @@ int main()
     bb_page_request req;
     bb_init(&req, PARSE_GET | PARSE_POST);
 
-    char *username = bb_cgi_get_var(req.q_vars, "username");
-    char *password = bb_cgi_get_var(req.q_vars, "password");
-    char *sid = bb_cgi_get_var(req.q_vars, "sid");
-    char *category = bb_cgi_get_var(req.q_vars, "c");
-    char *action = bb_cgi_get_var(req.q_vars, "a");
+    char *username  = bb_cgi_get_var(req.q_vars, "username");
+    char *password  = bb_cgi_get_var(req.q_vars, "password");
+    char *sid       = bb_cgi_get_var(req.q_vars, "sid");    // Session ID
+    char *category  = bb_cgi_get_var(req.q_vars, "c");      // Category
+    char *action    = bb_cgi_get_var(req.q_vars, "a");      // Action
 
-    /* Authenticate user and set session */
+    // Authenticate user and set session
     if (username != NULL && password != NULL && verify_user(username, password)) {
         char s [20];
         srand(time(NULL) + hash((unsigned char*)password) + hash((unsigned char*)password));
         snprintf(s, 20, "%x", rand());
         set_user_session(username, password, s);
+        // Switch these depending if your browser supports status headers
         printf("Refresh: 0;url=%s?sid=%s\r\n\r\n", req.script_name, s);
         // printf("Status: 303 See Other\r\n");
         // printf("Location: %s?sid=%s\r\n\r\n", req.script_name, s);
@@ -338,16 +340,15 @@ int main()
     
     // Verify user, otherwise show login form
     if (sid == NULL || !verify_session(sid)) {
-        // Start form
+        // Login form
         printf("Content-Type: text/html\r\n\r\n");
-        printf(" <form action=\"%s\" method=\"POST\">\
+        printf("<h3>bittyblog Login</h3><br> <form action=\"%s\" method=\"POST\">\
         Username<br><input type=\"text\" name=\"username\" value=\"\"><br>\
         Password<br><input type=\"password\" name=\"password\" value=\"\"><br><br>\
         <input type=\"submit\" value=\"Submit\">\
         </form>", req.script_name);
 
         bb_free(&req);
-
         return 0;
     }
 

@@ -224,16 +224,16 @@ ON p.id = t.page_id"
 int db_count(char* page_name_id);
 int db_search_count(char* page_name_id, char* keyword);
 int db_tag_count(char* tag);
-vector_p * db_search(char* page_name_id, char* keyword);
-vector_p * db_nsearch(char* page_name_id, char* keyword, int count, int offset);
-vector_p * db_ntag(char* tag, int count, int offset);
-vector_p * db_monthyear(char* page_name_id, int month, int year);
-vector_p * db_nposts(char* page_name_id, int count, int offset);
-vector_p * db_id(int id);
+bb_vec * db_search(char* page_name_id, char* keyword);
+bb_vec * db_nsearch(char* page_name_id, char* keyword, int count, int offset);
+bb_vec * db_ntag(char* tag, int count, int offset);
+bb_vec * db_monthyear(char* page_name_id, int month, int year);
+bb_vec * db_nposts(char* page_name_id, int count, int offset);
+bb_vec * db_id(int id);
 
 // Admin posts interface
-vector_p * db_admin_all_posts_preview();
-vector_p * db_admin_id(int id);
+bb_vec * db_admin_all_posts_preview();
+bb_vec * db_admin_id(int id);
 // Posts
 int db_new_post(Post* p);
 int db_update_post(Post* p);
@@ -255,11 +255,9 @@ char *nmonth_to_smonth(int month);
 
 // Function to NULL out a Post struct
 void Post_init(Post*);
+void Post_free(Post* p);
 
 // Vector implementation that holds results
-vector_p * vector_p_new();
-void vector_p_append(vector_p *vp, Post *p);
-void vector_p_free(vector_p *vp);
 void free_archives(Archives *archives);
 
 // Load pages from database

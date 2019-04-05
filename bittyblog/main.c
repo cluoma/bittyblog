@@ -58,7 +58,7 @@ int main()
     }
 
     // If we have an id, always use FULL BLOG POST style
-    if( bb_cgi_get_var(req.q_vars, "id") ) req.page->style = BLOG_FULL_POST;
+    if( req.page != NULL && bb_cgi_get_var(req.q_vars, "id") ) req.page->style = BLOG_FULL_POST;
 
     // Load the currect template file, based on page style
     DString *template;

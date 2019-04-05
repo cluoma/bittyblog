@@ -37,7 +37,8 @@ void bb_free(bb_page_request *req)
 
     // Free list of posts
     if (req->posts != NULL) {
-        vector_p_free(req->posts);
+        //vector_p_free(req->posts);
+        bb_vec_free(req->posts);
     }
 }
 
@@ -93,16 +94,17 @@ void bb_init(bb_page_request *req, int options)
 // Load the requested posts and store them
 void bb_load_posts(bb_page_request *req) {
 
-    vector_p * entries;
+    bb_vec * entries;
 
-    char *search = bb_cgi_get_var( req->q_vars, "search" );
-    char *tag = bb_cgi_get_var( req->q_vars, "tag" );
-    char *id = bb_cgi_get_var( req->q_vars, "id" );
-    char *start = bb_cgi_get_var( req->q_vars, "start" );
-    char *month = bb_cgi_get_var( req->q_vars, "month" );
-    char *year = bb_cgi_get_var( req->q_vars, "year" );
+    char *search    = bb_cgi_get_var( req->q_vars, "search" );
+    char *tag       = bb_cgi_get_var( req->q_vars, "tag" );
+    char *id        = bb_cgi_get_var( req->q_vars, "id" );
+    char *start     = bb_cgi_get_var( req->q_vars, "start" );
+    char *month     = bb_cgi_get_var( req->q_vars, "month" );
+    char *year      = bb_cgi_get_var( req->q_vars, "year" );
 
-    if (id == NULL) {
+    if (id == NULL)
+    {
         if (search != NULL)
         {
             entries = db_nsearch(req->page->id_name, search, POSTS_PER_PAGE, (start == NULL ? 0 : (int)bb_strtol(start, 0)));
@@ -127,7 +129,9 @@ void bb_load_posts(bb_page_request *req) {
             entries = db_nposts(req->page->id_name, POSTS_PER_PAGE, 0);
             req->total_post_count = db_count(req->page->id_name);
         }
-    } else {
+    }
+    else
+    {
         entries = db_id((int)bb_strtol(id, 1));
     }
     req->posts = entries;
@@ -135,15 +139,15 @@ void bb_load_posts(bb_page_request *req) {
 
 bb_vec * bb_image_list(bb_page_request *req) {
     tinydir_dir dir;
-    tinydir_open(&dir, req->image_dir);
+    tinydir_open_sorted(&dir, req->image_dir);
 
     bb_vec * image_files = malloc(sizeof(bb_vec));
     bb_vec_init(image_files, NULL);
 
-    while (dir.has_next)
+    for(int i = 0; i < dir.n_files; i++)
     {
 	    tinydir_file file;
-	    tinydir_readfile(&dir, &file);
+	    tinydir_readfile_n(&dir, &file, i);
 
 	    if (!file.is_dir)
 	    {
@@ -159,13 +163,13 @@ bb_vec * bb_image_list(bb_page_request *req) {
                    bb_vec_add(image_files, name);
                }
 	    }
-	    tinydir_next(&dir);
     }
     tinydir_close(&dir);
 
     return image_files;
 }
 
+// Returns vector tokenized by delim, leading and trailing whitespace is removed
 bb_vec * tokenize_tags(const char *str, const char * delim)
 {
     char *s;
@@ -201,14 +205,18 @@ bb_vec * tokenize_tags(const char *str, const char * delim)
     return vec;
 }
 
+// Parse string into long, return def if none found or error
 long bb_strtol(char *str, long def)
 {
     long ret_val;
     char *endptr;
     errno = 0;
-    
-    ret_val = strtol(str, &endptr, 10);
 
+    if (str == NULL) {
+        return def;
+    }
+
+    ret_val = strtol(str, &endptr, 10);
     if (errno || endptr == str) {
         return def;
     } else {

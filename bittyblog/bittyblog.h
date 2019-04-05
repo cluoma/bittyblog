@@ -15,11 +15,13 @@
 
 #define GET_ENV_VAR(X) ( (getenv(X) == NULL) ? "" : getenv(X) )
 
-#define POST 1
-#define PAGE 2
+#define POST            1
+#define PAGE            2
 
-#define PARSE_GET     1
-#define PARSE_POST    2
+// Option flags
+#define PARSE_GET       1
+#define PARSE_POST      2
+#define ADMIN_REQ       4
 
 typedef struct {
     int p_id;
@@ -81,7 +83,7 @@ typedef struct {
     char *image_dir;
 
     // List of posts for the page request
-    vector_p *posts;
+    bb_vec *posts;
     int total_post_count;
 } bb_page_request;
 
