@@ -30,7 +30,7 @@ typedef struct {
 /*
  * Queries for loading posts
  */
-#define N_POSTS_QUERY "SELECT title, p.id as id, text, byline, datetime(time, 'unixepoch') AS time, thumbnail, tags \
+#define N_POSTS_QUERY "SELECT title, a.name_id as page, p.id as id, text, byline, datetime(time, 'unixepoch') AS time, thumbnail, tags \
 FROM posts p \
 LEFT JOIN (SELECT tr.post_id, group_concat(t.tag, ', ') `tags` \
 	FROM tags t \
@@ -38,9 +38,10 @@ LEFT JOIN (SELECT tr.post_id, group_concat(t.tag, ', ') `tags` \
 	GROUP BY post_id \
 ) t2 \
 ON p.id = t2.post_id \
+LEFT JOIN pages a ON p.page_id = a.id \
 WHERE p.visible = 1 \
 AND datetime(time, 'unixepoch') <= datetime('now') \
-AND (id IN (SELECT post_id \
+AND (p.id IN (SELECT post_id \
 	FROM tags t \
 	INNER JOIN tags_relate t3 ON t.id = t3.tag_id \
 	INNER JOIN tags_pages_relate t2 ON t.id = t2.tag_id \

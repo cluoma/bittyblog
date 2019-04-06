@@ -54,6 +54,7 @@ int main()
         bb_archives_to_json(root_object, &archives);
         free_archives(&archives);
 
+        // Set nav buttons
         bb_nav_buttons_to_json(root_object, &req);
     }
 
@@ -63,7 +64,8 @@ int main()
     // Load the currect template file, based on page style
     DString *template;
     int page_style = req.page != NULL ? req.page->style : MISSING;
-    switch( page_style ) {
+    switch( page_style )
+    {
         char dir_base[1024];
         case BLOG_FULL_POST:
             snprintf(dir_base, 1023, "%s/blog.m", TEMPLATE_PATH);

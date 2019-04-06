@@ -18,6 +18,7 @@
 #include "db_interface.h"
 #include "config.h"
 #include "vec.h"
+#include "to_json.h"
 #include "bittyblog.h"
 #include <libMagnum.h>
 #include <parson.h>
@@ -31,127 +32,16 @@
 
 void posts(JSON_Object *root_object, bb_page_request* req) {
     bb_vec * entries = db_admin_all_posts_preview();
-
-    JSON_Array *posts = json_value_get_array(json_value_init_array());
-    for (int i = 0; i < bb_vec_count(entries); i++) {
-        Post *p = (Post*)bb_vec_get(entries, i);
-        JSON_Value *tmp_post = json_value_init_object();
-        json_object_set_number(json_value_get_object(tmp_post), "p_id", p->p_id);
-        json_object_set_string(json_value_get_object(tmp_post), "page", p->page);
-        json_object_set_string(json_value_get_object(tmp_post), "title", p->title);
-        json_object_set_string(json_value_get_object(tmp_post), "time", p->time);
-        json_object_set_string(json_value_get_object(tmp_post), "byline", p->byline);
-        json_object_set_string(json_value_get_object(tmp_post), "thumbnail", p->thumbnail);
-        json_object_set_number(json_value_get_object(tmp_post), "visible", p->visible);
-        json_array_append_value(posts, tmp_post);
-    }
-    json_object_set_value(root_object, "posts", json_array_get_wrapping_value(posts));
-
+    bb_posts_to_json_admin(root_object, req, entries, VIEW);
     bb_vec_free(entries);
 }
-
 void edit_post(JSON_Object *root_object, bb_page_request* req, int p_id) {
     bb_vec * entries = db_admin_id(p_id);
-    bb_vec * image_list = bb_image_list(req);
-
-    // Add post to JSON
-    if (bb_vec_count(entries) > 0) {
-        Post *p = (Post*)bb_vec_get(entries, 0);
-        JSON_Array *posts = json_value_get_array(json_value_init_array());
-        JSON_Value *tmp_post = json_value_init_object();
-        json_object_set_number(json_value_get_object(tmp_post), "p_id", p->p_id);
-        json_object_set_string(json_value_get_object(tmp_post), "page", p->page);
-        json_object_set_string(json_value_get_object(tmp_post), "title", p->title);
-
-        // Add text twice, once for text box and once for the preview
-        json_object_set_string(json_value_get_object(tmp_post), "text", p->text);
-        char *formatted_post_text = newline_to_html(p->text);
-        json_object_set_string(json_value_get_object(tmp_post), "text_formatted", formatted_post_text);
-        free(formatted_post_text);
-
-        json_object_set_string(json_value_get_object(tmp_post), "time", p->time);
-        char time_r[25]; sprintf(time_r, "%ld", p->time_r);
-        json_object_set_string(json_value_get_object(tmp_post), "time_r", time_r);
-        json_object_set_string(json_value_get_object(tmp_post), "byline", p->byline);
-        json_object_set_string(json_value_get_object(tmp_post), "extra", p->extra);
-        json_object_set_string(json_value_get_object(tmp_post), "thumbnail", p->thumbnail);
-        json_object_set_number(json_value_get_object(tmp_post), "visible", p->visible);
-        // Add an array of tags to the post
-        bb_vec *tags = p->tags;
-        if (tags != NULL) {
-            JSON_Array *json_tags = json_value_get_array(json_value_init_array());
-            for (int j = 0; j < bb_vec_count(tags); j++) {
-                json_array_append_string(json_tags, (char*)bb_vec_get(tags, j));
-            }
-            json_object_set_value(json_value_get_object(tmp_post), "tags", json_array_get_wrapping_value(json_tags));
-        }
-        json_array_append_value(posts, tmp_post);
-        json_object_set_value(root_object, "posts", json_array_get_wrapping_value(posts));
-
-        // Add image list to JSON
-        if (image_list->count > 0) {
-            JSON_Array *images = json_value_get_array(json_value_init_array());
-            for (int i = 0; i < image_list->count; i++) {
-                JSON_Value *tmp = json_value_init_object();
-                json_object_set_string(json_value_get_object(tmp), "filename", (char*)bb_vec_get(image_list, i));
-                if (strcmp((char*)bb_vec_get(image_list, i), p->thumbnail) == 0) {
-                    json_object_set_boolean(json_value_get_object(tmp), "selected", 1);
-                } else {
-                    json_object_set_boolean(json_value_get_object(tmp), "selected", 0);
-                }
-                    json_array_append_value(images, tmp);
-                }
-            json_object_set_value(root_object, "images", json_array_get_wrapping_value(images));
-        }
-        bb_vec_free(image_list);
-
-        // Add pages to JSON
-        JSON_Array *pages = json_value_get_array(json_value_init_array());
-        for (int i = 0; i < req->pages->count; i++) {
-            JSON_Value *tmp = json_value_init_object();
-            json_object_set_number(json_value_get_object(tmp), "id", ((bb_page*)bb_vec_get(req->pages, i))->id);
-            json_object_set_string(json_value_get_object(tmp), "id_name", ((bb_page*)bb_vec_get(req->pages, i))->id_name);
-            json_object_set_string(json_value_get_object(tmp), "name", ((bb_page*)bb_vec_get(req->pages, i))->name);
-            if (((bb_page*)bb_vec_get(req->pages, i))->id == p->page_id) {
-                json_object_set_boolean(json_value_get_object(tmp), "selected", 1);
-            } else {
-                json_object_set_boolean(json_value_get_object(tmp), "selected", 0);
-            }
-            json_array_append_value(pages, tmp);
-        }
-        json_object_set_value(root_object, "pages", json_array_get_wrapping_value(pages));
-
-        bb_vec_free(entries);
-    }
+    bb_posts_to_json_admin(root_object, req, entries, EDIT);
+    bb_vec_free(entries);
 }
-
 void new_post(JSON_Object *root_object, bb_page_request* req) {
-    bb_vec * image_list = bb_image_list(req);
-
-    // Add image list to JSON
-    if (image_list->count > 0) {
-        JSON_Array *images = json_value_get_array(json_value_init_array());
-        for (int i = 0; i < image_list->count; i++) {
-                JSON_Value *tmp = json_value_init_object();
-                json_object_set_string(json_value_get_object(tmp), "filename", (char*)bb_vec_get(image_list, i));
-                json_object_set_boolean(json_value_get_object(tmp), "selected", 0);
-            json_array_append_value(images, tmp);
-        }
-        json_object_set_value(root_object, "images", json_array_get_wrapping_value(images));
-    }
-    bb_vec_free(image_list);
-
-    // Add pages to JSON
-    JSON_Array *pages = json_value_get_array(json_value_init_array());
-    for (int i = 0; i < req->pages->count; i++) {
-        JSON_Value *tmp = json_value_init_object();
-        json_object_set_number(json_value_get_object(tmp), "id", ((bb_page*)bb_vec_get(req->pages, i))->id);
-        json_object_set_string(json_value_get_object(tmp), "id_name", ((bb_page*)bb_vec_get(req->pages, i))->id_name);
-        json_object_set_string(json_value_get_object(tmp), "name", ((bb_page*)bb_vec_get(req->pages, i))->name);
-        json_object_set_boolean(json_value_get_object(tmp), "selected", 0);
-        json_array_append_value(pages, tmp);
-    }
-    json_object_set_value(root_object, "pages", json_array_get_wrapping_value(pages));
+    bb_posts_to_json_admin(root_object, req, NULL, NEW);
 }
 
 void fill_post(bb_page_request *req, Post *p) {
@@ -194,78 +84,13 @@ void fill_post(bb_page_request *req, Post *p) {
 }
 
 void pages(JSON_Object *root_object, bb_page_request* req) {
-    // Add pages to JSON
-    JSON_Array *pages = json_value_get_array(json_value_init_array());
-    for (int i = 0; i < req->pages->count; i++) {
-        JSON_Value *tmp = json_value_init_object();
-        json_object_set_number(json_value_get_object(tmp), "id", ((bb_page*)bb_vec_get(req->pages, i))->id);
-        json_object_set_string(json_value_get_object(tmp), "id_name", ((bb_page*)bb_vec_get(req->pages, i))->id_name);
-        json_object_set_string(json_value_get_object(tmp), "name", ((bb_page*)bb_vec_get(req->pages, i))->name);
-        char style[25]; sprintf(style, "%d", ((bb_page*)bb_vec_get(req->pages, i))->style);
-        json_object_set_string(json_value_get_object(tmp), "style", style);
-        // Add an array of tags to the post
-        bb_vec *tags = ((bb_page*)bb_vec_get(req->pages, i))->tags;
-        if (tags != NULL) {
-            JSON_Array *json_tags = json_value_get_array(json_value_init_array());
-            for (int j = 0; j < bb_vec_count(tags); j++) {
-                json_array_append_string(json_tags, (char*)bb_vec_get(tags, j));
-            }
-            json_object_set_value(json_value_get_object(tmp), "tags", json_array_get_wrapping_value(json_tags));
-        }
-        json_array_append_value(pages, tmp);
-    }
-    json_object_set_value(root_object, "pages", json_array_get_wrapping_value(pages));
+    bb_pages_to_json_admin(root_object, req, 0, VIEW);
 }
-
 void new_page(JSON_Object *root_object, bb_page_request* req) {
-    // Add arrary of Styles to page
-    JSON_Array *json_styles = json_value_get_array(json_value_init_array());
-    for (int j = 0; j < STYLE_LAST; j++) {
-        JSON_Value *tmp2 = json_value_init_object();
-        char style[25]; sprintf(style, "%d", j);
-        json_object_set_string(json_value_get_object(tmp2), "style", style);
-        json_array_append_value(json_styles, tmp2);
-    }
-    json_object_set_value(root_object, "styles", json_array_get_wrapping_value(json_styles));
+    bb_pages_to_json_admin(root_object, req, 0, NEW);
 }
-
 void edit_page(JSON_Object *root_object, bb_page_request* req, int page_id) {
-    // Add pages to JSON
-    JSON_Array *pages = json_value_get_array(json_value_init_array());
-    for (int i = 0; i < req->pages->count; i++) {
-        if (((bb_page*)bb_vec_get(req->pages, i))->id != page_id) continue;
-        JSON_Value *tmp = json_value_init_object();
-        json_object_set_number(json_value_get_object(tmp), "id", ((bb_page*)bb_vec_get(req->pages, i))->id);
-        json_object_set_string(json_value_get_object(tmp), "id_name", ((bb_page*)bb_vec_get(req->pages, i))->id_name);
-        json_object_set_string(json_value_get_object(tmp), "name", ((bb_page*)bb_vec_get(req->pages, i))->name);
-        char style[25]; sprintf(style, "%d", ((bb_page*)bb_vec_get(req->pages, i))->style);
-        json_object_set_string(json_value_get_object(tmp), "style", style);
-        // Add an array of tags to the page
-        bb_vec *tags = ((bb_page*)bb_vec_get(req->pages, i))->tags;
-        if (tags != NULL) {
-            JSON_Array *json_tags = json_value_get_array(json_value_init_array());
-            for (int j = 0; j < bb_vec_count(tags); j++) {
-                json_array_append_string(json_tags, (char*)bb_vec_get(tags, j));
-            }
-            json_object_set_value(json_value_get_object(tmp), "tags", json_array_get_wrapping_value(json_tags));
-        }
-        
-        // Add arrary of Styles to page
-        JSON_Array *json_styles = json_value_get_array(json_value_init_array());
-        for (int j = 0; j < STYLE_LAST; j++) {
-            JSON_Value *tmp2 = json_value_init_object();
-            char style[25]; sprintf(style, "%d", j);
-            json_object_set_string(json_value_get_object(tmp2), "style", style);
-            if (((bb_page*)bb_vec_get(req->pages, i))->style == j) {
-                json_object_set_boolean(json_value_get_object(tmp2), "selected", 1);
-            }
-            json_array_append_value(json_styles, tmp2);
-        }
-        json_object_set_value(json_value_get_object(tmp), "styles", json_array_get_wrapping_value(json_styles));
-
-        json_array_append_value(pages, tmp);
-    }
-    json_object_set_value(root_object, "pages", json_array_get_wrapping_value(pages));
+    bb_pages_to_json_admin(root_object, req, page_id, EDIT);
 }
 
 void fill_page(bb_page_request *req, bb_page *p) {
@@ -472,40 +297,40 @@ int main()
     else if (strcmp(GET_ENV_VAR("REQUEST_METHOD"), "GET") == 0)
     {
         if (category != NULL && strcmp(category, "posts") == 0)
-        {           // Load list of posts
-            if (action == NULL) {
+        { // Load list of posts
+            if (action == NULL)
+            {
                 posts(root_object, &req);
-                json_object_set_string(root_object, "category_posts", category);
             }
-            if (action != NULL && strcmp(action, "new") == 0) {
+            if (action != NULL && strcmp(action, "new") == 0)
+            {
                 new_post(root_object, &req);
-                json_object_set_string(root_object, "category_new_posts", category);
             }
         }
         else if (category != NULL && strcmp(category, "pages") == 0)
-        {    // Load list of pages
-            if (action == NULL) {
+        { // Load list of pages
+            if (action == NULL)
+            {
                 pages(root_object, &req);
-                json_object_set_string(root_object, "category_pages", category);
-            } else if (strcmp(action, "new") == 0) {
+            }
+            else if (strcmp(action, "new") == 0)
+            {
                 new_page(root_object, &req);
-                json_object_set_string(root_object, "category_new_pages", category);
             }
         }
         else if (category != NULL && strcmp(category, "media") == 0)
-        {   // List of images
+        { // List of images
             media_to_json(root_object, &req);
             json_object_set_string(root_object, "category_media", category);
         }
         else if (bb_cgi_get_var(req.q_vars, "p_id") != NULL)
-        {   // Load single post to edit
+        { // Load single post to edit
             edit_post(root_object, &req, (int)bb_strtol(bb_cgi_get_var(req.q_vars, "p_id"), -1));
-            json_object_set_boolean(root_object, "category_edit_posts", 1);
         }
         else if (bb_cgi_get_var(req.q_vars, "page_id") != NULL)
         {
+            // Load a single page to edit
             edit_page(root_object, &req, (int)bb_strtol(bb_cgi_get_var(req.q_vars, "page_id"), -1));
-            json_object_set_boolean(root_object, "category_edit_pages", 1);
         }
     }
 
