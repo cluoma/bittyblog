@@ -118,7 +118,7 @@ void fill_page(bb_page_request *req, bb_page *p) {
 }
 
 void media_to_json(JSON_Object *root_object, bb_page_request* req) {
-    bb_vec * image_list = bb_image_list(req);
+    bb_vec * image_list = bb_image_list(req, ALL);
     // Add image list to JSON
     if (image_list->count > 0) {
         JSON_Array *images = json_value_get_array(json_value_init_array());

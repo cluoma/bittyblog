@@ -221,7 +221,7 @@ void bb_posts_to_json_admin(JSON_Object *root_object, bb_page_request *req, bb_v
             if (action == EDIT)
             {
                 // Add image list to JSON
-                bb_vec *image_list = bb_image_list(req);
+                bb_vec *image_list = bb_image_list(req, THUMBNAILS);
                 if (image_list->count > 0)
                 {
                     JSON_Array *images = json_value_get_array(json_value_init_array());
@@ -270,7 +270,7 @@ void bb_posts_to_json_admin(JSON_Object *root_object, bb_page_request *req, bb_v
     else
     {
         // Add image list to JSON
-        bb_vec *image_list = bb_image_list(req);
+        bb_vec *image_list = bb_image_list(req, THUMBNAILS);
         if (image_list->count > 0)
         {
             JSON_Array *images = json_value_get_array(json_value_init_array());

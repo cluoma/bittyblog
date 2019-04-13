@@ -45,10 +45,6 @@ void handle_rewrite(bb_page_request *req)
     char *uri1 = bb_strcpy(bb_cgi_get_var(req->q_vars, "uripath1"));
     char *uri2 = bb_strcpy(bb_cgi_get_var(req->q_vars, "uripath2"));
 
-    fprintf(stderr, "URI 0: %s\n", uri0);
-    fprintf(stderr, "URI 1: %s\n", uri1);
-    fprintf(stderr, "URI 2: %s\n", uri2);
-
     if (strcmp(uri0, "") != 0) {
         if (strcmp(uri0, "post") == 0)
         {
@@ -219,7 +215,7 @@ void bb_load_posts(bb_page_request *req) {
     req->posts = entries;
 }
 
-bb_vec * bb_image_list(bb_page_request *req) {
+bb_vec * bb_image_list(bb_page_request *req, int thumbnail_only) {
     tinydir_dir dir;
     tinydir_open_sorted(&dir, req->image_dir);
 
@@ -239,11 +235,15 @@ bb_vec * bb_image_list(bb_page_request *req) {
                strcmp(file.extension, "png")  == 0 ||
                strcmp(file.extension, "PNG")  == 0 ||
                strcmp(file.extension, "gif")  == 0)
-               {
-                   char *name = calloc(256+1, 1);
-                   strncpy(name, file.name, 256);
-                   bb_vec_add(image_files, name);
-               }
+            {
+                if ( !thumbnail_only ||
+                    (thumbnail_only && strstr(file.name, ".thumbnail.") != NULL))
+                {
+                    char *name = calloc(256+1, 1);
+                    strncpy(name, file.name, 256);
+                    bb_vec_add(image_files, name);
+                }
+            }
 	    }
     }
     tinydir_close(&dir);
