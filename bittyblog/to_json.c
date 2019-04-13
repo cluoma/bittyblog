@@ -20,7 +20,6 @@ int bb_default_to_json(JSON_Object *root_object, bb_page_request *req)
     json_object_set_string(root_object, "title", req->html_title);
     json_object_set_string(root_object, "navbar_title", req->navbar_title);
     json_object_set_string(root_object, "owner", req->copyright_owner);
-    json_object_set_string(root_object, "about", ABOUT);
 
     // Add REQUEST variables to JSON
     json_object_set_string(root_object, "script_name", req->script_name);

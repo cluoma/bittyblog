@@ -17,7 +17,6 @@
 #define DB_PATH "~/bittyblog.db"
 #define IMAGE_PATH "~/www/images"
 #define TEMPLATE_PATH "~/templates"
-#define ABOUT "Tell your readers about your blog"
 
 // Site Behaviour
 #define POSTS_PER_PAGE 5     // How many blog posts should be shown per pagination

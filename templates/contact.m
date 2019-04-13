@@ -24,20 +24,37 @@
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
             </label>
-            <a class="navbar-brand" href="{{script_name}}">{{navbar_title}}</a>
+            {{#rewrite}}
+            <a class="navbar-brand" href="/">
+            {{/rewrite}}
+            {{^rewrite}}
+            <a class="navbar-brand" href="{{script_name}}">
+            {{/rewrite}}
+                {{navbar_title}}
+            </a>
         </div>
         <!-- Collect the nav links, forms, and other content for toggling -->
         <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
             
             <ul class="nav navbar-nav">
-            {{#pages}}
-            <li {{#active}}class="active"{{/active}}>
-                <a href="{{script_name}}?page={{id_name}}">{{name}}</a>
-            </li>
-            {{/pages}}
+                {{#pages}}
+                <li {{#active}}class="active"{{/active}}>
+                    {{#rewrite}}
+                    <a href="/{{id_name}}">{{name}}</a>
+                    {{/rewrite}}
+                    {{^rewrite}}
+                    <a href="{{script_name}}?page={{id_name}}">{{name}}</a>
+                    {{/rewrite}}
+                </li>
+                {{/pages}}
             </ul>
 
+            {{#rewrite}}
+            <form action="/search" method="get" class="navbar-form navbar-right" role="search">
+            {{/rewrite}}
+            {{^rewrite}}
             <form action="{{script_name}}" method="get" class="navbar-form navbar-right" role="search">
+            {{/rewrite}}
             <div class="input-group">
                 <input type="text" name="search" class="form-control" placeholder="Search">
                 <span class="input-group-btn">
@@ -68,12 +85,27 @@
 
 {{#nav_buttons}}
 <nav><ul class="pager">
+    {{#rewrite}}
+    {{#older}}
+    <li><a href="{{#tag}}/tag/{{.}}?{{/tag}}{{^tag}}{{#search}}/search?search={{.}}{{/search}}{{^search}}?{{/search}}{{#search}}&{{/search}}{{/tag}}start={{.}}">Older</a></li>
+    {{/older}}
+    {{/rewrite}}
+    {{^rewrite}}
     {{#older}}
     <li><a href="{{script_name}}?{{query_string_wo_start}}&start={{.}}">Older</a></li>
     {{/older}}
+    {{/rewrite}}
+    
+    {{#rewrite}}
+    {{#newer}}
+    <li><a href="{{#tag}}/tag/{{.}}?{{/tag}}{{^tag}}{{#search}}/search?search={{.}}{{/search}}{{^search}}?{{/search}}{{#search}}&{{/search}}{{/tag}}start={{.}}">Newer</a></li>
+    {{/newer}}
+    {{/rewrite}}
+    {{^rewrite}}
     {{#newer}}
     <li><a href="{{script_name}}?{{query_string_wo_start}}&start={{.}}">Newer</a></li>
     {{/newer}}
+    {{/rewrite}}
     </ul></nav>
 {{/nav_buttons}}
 
