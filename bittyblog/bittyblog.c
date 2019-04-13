@@ -17,6 +17,79 @@
 #include "config.h"
 #include "db_interface.h"
 
+char *bb_strcpy(const char* str)
+{
+    char *ret;
+    if (str == NULL)
+    {
+        ret = malloc(1);
+        ret[0] = '\0';
+    }
+    else
+    {
+        int len = strlen(str);
+        ret = malloc(len+1);
+        strcpy(ret, str);
+        ret[len] = '\0';
+    }
+    return ret;
+}
+
+void handle_rewrite(bb_page_request *req)
+{
+    // Save these
+    char *search = bb_strcpy(bb_cgi_get_var(req->q_vars, "search"));
+    char *start = bb_strcpy(bb_cgi_get_var(req->q_vars, "start"));
+
+    char *uri0 = bb_strcpy(bb_cgi_get_var(req->q_vars, "uripath0"));
+    char *uri1 = bb_strcpy(bb_cgi_get_var(req->q_vars, "uripath1"));
+    char *uri2 = bb_strcpy(bb_cgi_get_var(req->q_vars, "uripath2"));
+
+    fprintf(stderr, "URI 0: %s\n", uri0);
+    fprintf(stderr, "URI 1: %s\n", uri1);
+    fprintf(stderr, "URI 2: %s\n", uri2);
+
+    if (strcmp(uri0, "") != 0) {
+        if (strcmp(uri0, "post") == 0)
+        {
+            bb_cgi_remove_all_var(&(req->q_vars));
+            bb_cgi_add_var(&(req->q_vars), "id", uri1, strlen(uri1)+1);
+        }
+        else if (strcmp(uri0, "search") == 0)
+        {
+            bb_cgi_remove_all_var(&(req->q_vars));
+            bb_cgi_add_var(&(req->q_vars), "search", search, strlen(search)+1);
+            bb_cgi_add_var(&(req->q_vars), "start", start, strlen(start)+1);
+        }
+        else if (strcmp(uri0, "tag") == 0)
+        {
+            bb_cgi_remove_all_var(&(req->q_vars));
+            bb_cgi_add_var(&(req->q_vars), "tag", uri1, strlen(uri1)+1);
+            bb_cgi_add_var(&(req->q_vars), "start", start, strlen(start)+1);
+        }
+        else if (strcmp(uri0, "archive") == 0)
+        {
+            bb_cgi_remove_all_var(&(req->q_vars));
+            bb_cgi_add_var(&(req->q_vars), "year", uri1, strlen(uri1)+1);
+            bb_cgi_add_var(&(req->q_vars), "month", uri2, strlen(uri2)+1);
+        }
+        else
+        {
+            bb_cgi_remove_all_var(&(req->q_vars));
+            bb_cgi_add_var(&(req->q_vars), "page", uri0, strlen(uri0)+1);
+            bb_cgi_add_var(&(req->q_vars), "start", start, strlen(start)+1);
+        }
+    }
+    else
+    {
+        bb_cgi_remove_all_var(&(req->q_vars));
+    }
+
+    // Free everything
+    free(search); free(start);
+    free(uri0); free(uri1); free(uri2);
+}
+
 void bb_free(bb_page_request *req)
 {   
     // Free query vars
@@ -47,7 +120,7 @@ void bb_init(bb_page_request *req, int options)
     // Get environment variables
     req->request_method = GET_ENV_VAR("REQUEST_METHOD");
     req->script_name = GET_ENV_VAR("SCRIPT_NAME");
-
+    
     // Parse query string and POST data
     req->q_vars = NULL;
     if (options & PARSE_GET) {
@@ -55,6 +128,15 @@ void bb_init(bb_page_request *req, int options)
     }
     if (options & PARSE_POST) {
         req->q_vars = bb_cgi_get_post(req->q_vars);
+    }
+
+    // Handle rewrite if one was supplied in the query string
+    if (bb_cgi_get_var(req->q_vars, "rewrite") != NULL) {
+        req->q_vars = bb_cgi_get_uri(req->q_vars, bb_cgi_get_var(req->q_vars, "rewrite"));
+        handle_rewrite(req);
+        req->rewrite = 1;
+    } else {
+        req->rewrite = 0;
     }
 
     // Get the requested page name, default to 'blog' if none was supplied

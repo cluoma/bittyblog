@@ -21,7 +21,6 @@
 // Option flags
 #define PARSE_GET       1
 #define PARSE_POST      2
-#define ADMIN_REQ       4
 
 typedef struct {
     int p_id;
@@ -66,6 +65,7 @@ typedef struct {
     // CGI Vars
     char *request_method;
     char *script_name;
+    char *uri;
     char *page_name;
     // URI query variables
     query_var *q_vars;
@@ -85,6 +85,9 @@ typedef struct {
     // List of posts for the page request
     bb_vec *posts;
     int total_post_count;
+
+    // Is this a rewrite?
+    int rewrite;
 } bb_page_request;
 
 void bb_init(bb_page_request *, int options);

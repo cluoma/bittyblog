@@ -10,6 +10,11 @@
 #include "cgi.h"
 #include "bittyblog.h"
 
+#ifdef _FCGI
+#include <fcgi_stdio.h>
+#endif
+
+
 #define CONST_STRLEN(x)     (sizeof(x) - 1)
 #define MAX_LINEBUF (1023+1)
 
@@ -59,7 +64,8 @@ query_var * bb_cgi_get_post_simple(query_var *qv)
 {
     int size = atoi(GET_ENV_VAR("CONTENT_LENGTH"));
     char *query_s = calloc(size+1, 1);
-    if (read(0, query_s, size) < size) {
+    //if (read(0, query_s, size) < size) {
+    if (fread(query_s, 1, size, stdin) < size) {
         free(query_s);
         return NULL;
     }
@@ -85,6 +91,34 @@ query_var * bb_cgi_get_post_simple(query_var *qv)
     }
     free(for_free);
     free(query_s);
+
+    return qv;
+}
+
+query_var * bb_cgi_get_uri(query_var *qv, const char *uri_str)
+{
+    // Copy string
+    char *str_cpy = calloc(1, strlen(uri_str)+1);
+    char *for_free = str_cpy;
+    strcpy(str_cpy, uri_str);
+
+    char *val;
+    char key[10];
+    int depth = 0;
+    while ((val = strsep(&str_cpy, "/")) != NULL)
+    {
+        if (val != NULL && strcmp(val, "") != 0)
+        {
+            key[0] = '\0';
+            sprintf(key, "uripath%d", depth);
+            char *tmp = calloc(1, strlen(val)+1);
+            html_to_text( val, tmp );
+            bb_cgi_add_var(&qv, key, tmp, strlen(tmp)+1);
+            free(tmp);
+            depth++;
+        }
+    }
+    free(for_free);
 
     return qv;
 }
@@ -166,6 +200,21 @@ int bb_cgi_remove_var(query_var *qv, const char* key)
         prev = curr;
         curr = curr->next;
     }
+    return 1;
+}
+
+int bb_cgi_remove_all_var(query_var **qv)
+{
+    query_var *curr = *qv;
+    query_var *prev = NULL;
+    while (curr != NULL) {
+        free(curr->key);
+        free(curr->val);
+        prev = curr;
+        curr = curr->next;
+        free(prev);
+    }
+    *qv = NULL;
     return 1;
 }
 
@@ -356,16 +405,6 @@ char * newline_to_html(const char* string)
     int state = 0;
     int state2 = 0;
     for (int old_index = 0; old_index < length; old_index++) {
-
-        // Test if we're inside a <pre> tag
-        // if (old_index < length - 5 && strncmp(string+old_index, "<pre", 4) == 0)
-        // {
-        //     pre_tags_open++;
-        // }
-        // else if (old_index < length - 6 && strncmp(string+old_index, "</pre>", 6) == 0)
-        // {
-        //     pre_tags_open--;
-        // }
 
         switch (state) {
             case 0: if (string[old_index] == '<') {state = 1;} else {state = 0;}

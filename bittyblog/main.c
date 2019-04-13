@@ -68,23 +68,23 @@ int main()
     {
         char dir_base[1024];
         case BLOG_FULL_POST:
-            snprintf(dir_base, 1023, "%s/blog.m", TEMPLATE_PATH);
+            snprintf(dir_base, 1023, "%s/blog_rewrite.m", TEMPLATE_PATH);
             template = scan_file(dir_base);
             break;
         case BLOG_SMALL_POST:
-            snprintf(dir_base, 1023, "%s/blog_preview.m", TEMPLATE_PATH);
+            snprintf(dir_base, 1023, "%s/blog_preview_rewrite.m", TEMPLATE_PATH);
             template = scan_file(dir_base);
             break;
         case CONTACT:
-            snprintf(dir_base, 1023, "%s/contact.m", TEMPLATE_PATH);
+            snprintf(dir_base, 1023, "%s/contact_rewrite.m", TEMPLATE_PATH);
             template = scan_file(dir_base);
             break;
         case MISSING:
-            snprintf(dir_base, 1023, "%s/404.m", TEMPLATE_PATH);
+            snprintf(dir_base, 1023, "%s/404_rewrite.m", TEMPLATE_PATH);
             template = scan_file(dir_base);
             break;
         default:
-            snprintf(dir_base, 1023, "%s/blog.m", TEMPLATE_PATH);
+            snprintf(dir_base, 1023, "%s/blog_rewrite.m", TEMPLATE_PATH);
             template = scan_file(dir_base);
             break;
     }

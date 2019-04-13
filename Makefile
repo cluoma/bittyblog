@@ -1,5 +1,5 @@
 CC=gcc
-FCGI=n
+FCGI=y
 
 all: libMagnum.a
 ifeq ($(FCGI),y)

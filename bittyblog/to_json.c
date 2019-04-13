@@ -26,22 +26,16 @@ int bb_default_to_json(JSON_Object *root_object, bb_page_request *req)
     json_object_set_string(root_object, "script_name", req->script_name);
     json_object_set_string(root_object, "page_name", req->page_name);
 
-    // Add QUERY STRING variants to JSON
-    // Query string without the page variable
-    char *qs = bb_cgi_query_string_wo(req->q_vars, "page");
-    json_object_set_string(root_object, "query_string_wo_page", qs);
-    free(qs);
-    // Query string without the start variable
-    qs = bb_cgi_query_string_wo(req->q_vars, "start");
-    json_object_set_string(root_object, "query_string_wo_start", qs);
-    free(qs);
-
     // Add search query string variable to json (if we searched)
     char *search = bb_cgi_get_var(req->q_vars, "search");
     if (search) json_object_set_string(root_object, "search", search);
     // Add tag name to json if needed (if a tag was supplied)
     char *tag = bb_cgi_get_var(req->q_vars, "tag");
     if (tag && !search) json_object_set_string(root_object, "tag", tag);
+
+    // Set rewrite flag
+    if (req->rewrite)
+        json_object_set_boolean(root_object, "rewrite", 1);
 
     // Add CURRENT YEAR to JSON
     time_t timeval;
@@ -81,8 +75,12 @@ int bb_default_to_json(JSON_Object *root_object, bb_page_request *req)
 
 int bb_nav_buttons_to_json(JSON_Object *root_object, bb_page_request *req)
 {
+    // Query string without the start variable
+    char *qs = bb_cgi_query_string_wo(req->q_vars, "start");
+    json_object_set_string(root_object, "query_string_wo_start", qs);
+    free(qs);
+    
     long start = bb_strtol(bb_cgi_get_var(req->q_vars, "start"), 0);
-
     // Older
     if ( start+POSTS_PER_PAGE < req->total_post_count ) {
         char out[20];

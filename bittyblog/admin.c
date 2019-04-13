@@ -160,7 +160,12 @@ int main()
         // printf("Status: 303 See Other\r\n");
         // printf("Location: %s?sid=%s\r\n\r\n", req.script_name, s);
         bb_free(&req);
-        return 0;
+        
+        #ifdef _FCGI
+            continue;
+        #else
+            return 0;
+        #endif
     }
     
     // Verify user, otherwise show login form
@@ -174,7 +179,12 @@ int main()
         </form>", req.script_name);
 
         bb_free(&req);
-        return 0;
+
+        #ifdef _FCGI
+            continue;
+        #else
+            return 0;
+        #endif
     }
 
     // Initiate JSON objects
@@ -292,7 +302,11 @@ int main()
         json_value_free(root_value);
         bb_free(&req);
 
-        return 0;
+        #ifdef _FCGI
+            continue;
+        #else
+            return 0;
+        #endif
     }
     else if (strcmp(GET_ENV_VAR("REQUEST_METHOD"), "GET") == 0)
     {
