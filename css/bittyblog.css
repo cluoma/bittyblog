@@ -93,11 +93,13 @@ input[type=checkbox] {
         display: none
     }
 }
+/*
 @font-face {
     font-family: 'Glyphicons Halflings';
     src: url(../fonts/glyphicons-halflings-regular.eot);
     src: url(../fonts/glyphicons-halflings-regular.eot?#iefix) format('embedded-opentype'), url(../fonts/glyphicons-halflings-regular.woff2) format('woff2'), url(../fonts/glyphicons-halflings-regular.woff) format('woff'), url(../fonts/glyphicons-halflings-regular.ttf) format('truetype'), url(../fonts/glyphicons-halflings-regular.svg#glyphicons_halflingsregular) format('svg')
 }
+*/
 .glyphicon {
     position: relative;
     top: 1px;
@@ -785,7 +787,8 @@ input[type=checkbox]:focus {
  */
 
  body {
-    font-family: Georgia, "Times New Roman", Times, serif;
+    font-family: Helvetica, "Helvetica Neue", Arial, sans-serif;
+    font-weight: normal;
     color: #555;
 }
 
@@ -796,7 +799,7 @@ h4, .h4,
 h5, .h5,
 h6, .h6 {
     margin-top: 0;
-    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-family: Helvetica, "Helvetica Neue", Arial, sans-serif;
     font-weight: normal;
     color: #333;
 }

@@ -90,7 +90,7 @@ int main()
     }
 
     DString * out = d_string_new("");
-    magnum_populate_from_json(template, root_value, out, NULL, NULL);
+    magnum_populate_from_json(template, root_value, out, TEMPLATE_PATH, NULL);
 
     // Start of HTML output
     printf("Content-Length: %lu\r\n", out->currentStringLength);
