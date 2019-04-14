@@ -17,10 +17,10 @@
     {{^posts}}
     <h2 class="blog-post-title" style="text-align: center;">No Posts Found</h2>
     {{/posts}}
-</div>
 
-{{#nav_buttons}}
-<nav><ul class="pager">
+
+    {{#nav_buttons}}
+    <nav><ul class="pager">
     {{#rewrite}}
     {{#older}}
     <li><a href="{{#tag}}/tag/{{.}}?{{/tag}}{{^tag}}{{#search}}/search?search={{.}}{{/search}}{{^search}}?{{/search}}{{#search}}&{{/search}}{{/tag}}start={{.}}">Older</a></li>
@@ -43,7 +43,9 @@
     {{/newer}}
     {{/rewrite}}
     </ul></nav>
-{{/nav_buttons}}
+    {{/nav_buttons}}
+
+</div>
 
 </div>
 

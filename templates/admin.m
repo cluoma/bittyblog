@@ -46,9 +46,9 @@
 
     {{#category_new_pages}}
     <form role="form" method="post" action="{{script_name}}?sid={{sid}}&c=pages&a=new">
-        <div class="form-group"><label for="page_name_id">URL Name ID:</label><textarea name="page_name_id" class="form-control" rows="1" id="page_name_id"></textarea></div><br>
-        <div class="form-group"><label for="page_name">Name:</label><textarea name="page_name" class="form-control" rows="1" id="page_name"></textarea></div><br>
-        <div class="form-group"><label for="page_tags">Tags:</label><textarea name="page_tags" class="form-control" rows="1" id="page_tags"></textarea></div>
+        <label for="page_name_id">URL Name ID:</label><br><textarea name="page_name_id" id="page_name_id" rows="1" cols="100"></textarea><br>
+        <label for="page_name">Name:</label><br><textarea name="page_name" id="page_name" rows="1" cols="100"></textarea><br>
+        <label for="page_tags">Tags:</label><br><textarea name="page_tags" id="page_tags" rows="1" cols="100"></textarea><br>
         <div>
         <label for="page_style">Style</label>
         <select name="page_style" id="page_style">
@@ -65,9 +65,11 @@
     {{#category_edit_pages}}
     {{#pages}}
     <form role="form" method="post" action="{{script_name}}?sid={{sid}}&c=pages&a=update">
-        <div class="form-group"><label for="page_name_id">URL Name ID:</label><textarea name="page_name_id" class="form-control" rows="1" id="page_name_id">{{id_name}}</textarea></div><br>
-        <div class="form-group"><label for="page_name">Name:</label><textarea name="page_name" class="form-control" rows="1" id="page_name">{{name}}</textarea></div><br>
-        <div class="form-group"><label for="page_tags">Tags:</label><textarea name="page_tags" class="form-control" rows="1" id="page_tags">{{#tags}}{{.}}, {{/tags}}</textarea></div>
+
+        <label for="page_name_id">URL Name ID:</label><br><textarea name="page_name_id" id="page_name_id" rows="1" cols="100">{{id_name}}</textarea><br>
+        <label for="page_name">Name:</label><br><textarea name="page_name" id="page_name" rows="1" cols="100">{{name}}</textarea><br>
+        <label for="page_tags">Tags:</label><br><textarea name="page_tags" id="page_tags" rows="1" cols="100">{{#tags}}{{.}}, {{/tags}}</textarea><br>
+        <input id="page_id" name="page_id" type="hidden" value="{{id}}">
         <div>
         <label for="page_style">Style</label>
         <select name="page_style" id="page_style">
@@ -77,7 +79,6 @@
         </select>
         </div>
         <button type="submit">Submit</button>
-        <div class="form-group hidden"><label for="page_id">Page ID:</label><textarea name="page_id" class="form-control" rows="1" id="page_id">{{id}}</textarea></div>
     </form>
     {{/pages}}
     {{/category_edit_pages}}
@@ -133,18 +134,19 @@
             {{/pages}}
         </select>
         </div>
-        <div class="form-group"><label for="post_title">Title:</label><textarea name="post_title" class="form-control" rows="1" id="post_title">{{title}}</textarea></div><br>
-        <div class="form-group"><label for="post_byline">Byline:</label><textarea name="post_byline" class="form-control" rows="1" id="post_byline">{{byline}}</textarea></div><br>
-        <div class="form-group"><label for="post_time">Time:</label><textarea name="post_time" class="form-control" rows="1" id="post_time">{{time_r}}</textarea></div><br>
-        <div class="form-group"><label for="post_text">Post:</label><textarea name="post_text" class="form-control" rows="20" id="post_text">{{text}}</textarea></div>
-        <div class="form-group"><label for="post_tags">Tags:</label><textarea name="post_tags" class="form-control" rows="1" id="post_tags">{{#tags}}{{.}}, {{/tags}}</textarea></div>
-        <div><input id="post_visible" type="checkbox" name="post_visible" value="Invisible" {{#visible}}checked{{/visible}}><label for="post_visible">Published</label><br></div>
-        <div class="form-group hidden"><label for="post_id">Post ID:</label><textarea name="post_id" class="form-control" rows="1" id="post_id">{{p_id}}</textarea></div>
+        <label for="post_title">Title:</label><br><textarea name="post_title" id="post_title" rows="1" cols="100">{{title}}</textarea><br>
+        <label for="post_byline">Byline:</label><br><textarea name="post_byline" id="post_byline" rows="1" cols="100">{{byline}}</textarea><br>
+        <label for="post_time">Time:</label><br><input type="number" min="0" name="post_time" id="post_time" rows="1" value="{{time_r}}"><br>
+        <label for="post_text">Post:</label><br><textarea name="post_text" id="post_text" rows="20" cols="100">{{text}}</textarea><br>
+        <label for="post_tags">Tags:</label><br><textarea name="post_tags" id="post_tags" rows="1" cols="100">{{#tags}}{{.}}, {{/tags}}</textarea><br>
+        <label for="post_visible">Published</label><input id="post_visible" type="checkbox" name="post_visible" value="Invisible" {{#visible}}checked{{/visible}}><br>
+        <input id="post_id" name="post_id" type="hidden" value="{{p_id}}">
         <button type="submit">Submit</button>
     </form>
     {{/posts}}
     {{#posts}}
     <br><br>
+    <hr>
     <h3>Preview:</h3><br>
     <!-- Preview -->
     <div class="blog-post">
@@ -174,13 +176,12 @@
             {{/pages}}
         </select>
         </div>
-        <div class="form-group"><label for="post_title">Title:</label><textarea name="post_title" class="form-control" rows="1" id="post_title"></textarea></div><br>
-        <div class="form-group"><label for="post_byline">Byline:</label><textarea name="post_byline" class="form-control" rows="1" id="post_byline"></textarea></div><br>
-        <div class="form-group"><label for="post_time">Time:</label><textarea name="post_time" class="form-control" rows="1" id="post_time"></textarea></div><br>
-        <div class="form-group"><label for="post_text">Post:</label><textarea name="post_text" class="form-control" rows="20" id="post_text"></textarea></div>
-        <div class="form-group"><label for="post_tags">Tags:</label><textarea name="post_tags" class="form-control" rows="1" id="post_tags"></textarea></div>
-        <div><input id="post_visible" type="checkbox" name="post_visible" value="Invisible" {{#visible}}checked{{/visible}}><label for="post_visible">Published</label><br></div>
-        <div class="form-group hidden"><label for="post_id">Post ID:</label><textarea name="post_id" class="form-control" rows="1" id="post_id"></textarea></div>
+        <label for="post_title">Title:</label><br><textarea name="post_title" id="post_title" rows="1" cols="100"></textarea><br>
+        <label for="post_byline">Byline:</label><br><textarea name="post_byline" id="post_byline" rows="1" cols="100"></textarea><br>
+        <label for="post_time">Time:</label><br><input type="number" min="0" name="post_time" id="post_time" rows="1"><br>
+        <label for="post_text">Post:</label><br><textarea name="post_text" id="post_text" rows="20" cols="100"></textarea><br>
+        <label for="post_tags">Tags:</label><br><textarea name="post_tags" id="post_tags" rows="1" cols="100"></textarea><br>
+        <label for="post_visible">Published</label><input id="post_visible" type="checkbox" name="post_visible" value="Invisible"><br>
         <button type="submit">Submit</button>
     </form>
     {{/category_new_posts}}

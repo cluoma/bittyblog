@@ -357,10 +357,12 @@ int db_pages_cb(sqlite3_stmt* st, void* a) {
 
         page->id = sqlite3_column_int(st, 0);
         page->id_name = calloc(sqlite3_column_bytes(st, 1)+1, 1);
+        
         memcpy(page->id_name,
                 sqlite3_column_text(st, 1),
                 sqlite3_column_bytes(st, 1));
-        page->name = calloc(sqlite3_column_bytes(st, 1)+1, 2);
+
+        page->name = calloc(sqlite3_column_bytes(st, 2)+1, 2);
         memcpy(page->name,
                 sqlite3_column_text(st, 2),
                 sqlite3_column_bytes(st, 2));
