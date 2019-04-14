@@ -388,13 +388,15 @@ char * newline_to_html(const char* string)
 {
 
     if (string == NULL) return NULL;
-
-    int length = (int)strlen(string);
-
+    
+    int length = 0;
     int newlines = 0;
-    for (int i = 0; i < length; i++) {
-        if (string[i] == '\n')
+    const char *strp = string;
+    while (*strp != '\0') {
+        length++;
+        if (*strp == '\n')
             newlines++;
+        strp++;
     }
 
     // Allocate space for new string with enough room for the <br>'s
