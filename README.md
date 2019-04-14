@@ -19,8 +19,8 @@ A blogging platform using C+SQLite3 that runs as a CGI app.
 # Credits
 
 Code and inspiration from the following projects:
- * [parson](https://github.com/kgabis/parson)
- * [magnum](https://github.com/fletcher/magnum)
- * [qdecoder](https://github.com/wolkykim/qdecoder)
- * [tinydir](https://github.com/cxong/tinydir)
- * [bootstrap](https://getbootstrap.com/docs/3.4/css/)
+ * [parson](https://github.com/kgabis/parson) [MIT License](https://opensource.org/licenses/mit-license.php)
+ * [magnum](https://github.com/fletcher/magnum) [MIT License](https://opensource.org/licenses/mit-license.php)
+ * [qdecoder](https://github.com/wolkykim/qdecoder) [qDecoder License](https://github.com/wolkykim/qdecoder/blob/master/COPYING)
+ * [tinydir](https://github.com/cxong/tinydir) [tinydir License](https://github.com/cxong/tinydir/blob/master/COPYING)
+ * [bootstrap](https://getbootstrap.com/docs/3.4/css/) [MIT License](https://github.com/twbs/bootstrap/blob/v3-dev/LICENSE)
