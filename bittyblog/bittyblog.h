@@ -51,6 +51,7 @@ enum bb_page_styles {
     BLOG_FULL_POST  = 0,
     BLOG_SMALL_POST,
     CONTACT,
+    RSS,
     MISSING,
     STYLE_LAST
 };

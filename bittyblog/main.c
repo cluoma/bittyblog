@@ -60,6 +60,8 @@ int main()
 
     // If we have an id, always use FULL BLOG POST style
     if( req.page != NULL && bb_cgi_get_var(req.q_vars, "id") ) req.page->style = BLOG_FULL_POST;
+    // If we have rss, use the rss theme
+    if( req.page != NULL && bb_cgi_get_var(req.q_vars, "rss") ) req.page->style = RSS;
 
     // Load the currect template file, based on page style
     DString *template;
@@ -79,6 +81,10 @@ int main()
             snprintf(dir_base, 1023, "%s/contact.m", TEMPLATE_PATH);
             template = scan_file(dir_base);
             break;
+        case RSS:
+            snprintf(dir_base, 1023, "%s/rss.m", TEMPLATE_PATH);
+            template = scan_file(dir_base);
+            break;
         case MISSING:
             snprintf(dir_base, 1023, "%s/404.m", TEMPLATE_PATH);
             template = scan_file(dir_base);
@@ -94,7 +100,14 @@ int main()
 
     // Start of HTML output
     printf("Content-Length: %lu\r\n", out->currentStringLength);
-    printf("Content-Type: text/html\r\n\r\n");
+
+    // If we do HTML or RSS
+    printf("Content-Type: ");
+    if (page_style == RSS) {
+        printf("application/rss+xml\r\n\r\n");
+    } else {
+        printf("text/html\r\n\r\n");
+    }
     printf("%s", out->str);
 
     d_string_free(template, 1);

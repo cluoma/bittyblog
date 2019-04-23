@@ -38,8 +38,8 @@ char *bb_strcpy(const char* str)
 void handle_rewrite(bb_page_request *req)
 {
     // Save these
-    char *search = bb_strcpy(bb_cgi_get_var(req->q_vars, "search"));
-    char *start = bb_strcpy(bb_cgi_get_var(req->q_vars, "start"));
+    char *search    = bb_strcpy(bb_cgi_get_var(req->q_vars, "search"));
+    char *start     = bb_strcpy(bb_cgi_get_var(req->q_vars, "start"));
 
     char *uri0 = bb_strcpy(bb_cgi_get_var(req->q_vars, "uripath0"));
     char *uri1 = bb_strcpy(bb_cgi_get_var(req->q_vars, "uripath1"));
@@ -74,12 +74,18 @@ void handle_rewrite(bb_page_request *req)
             bb_cgi_remove_all_var(&(req->q_vars));
             bb_cgi_add_var(&(req->q_vars), "page", uri0, strlen(uri0)+1);
             bb_cgi_add_var(&(req->q_vars), "start", start, strlen(start)+1);
+
+            // add rss if it is the second argument
+            if (strcmp(uri1, "rss") == 0)
+                bb_cgi_add_var(&(req->q_vars), "rss", uri1, strlen(uri1)+1);
         }
     }
     else
     {
         bb_cgi_remove_all_var(&(req->q_vars));
     }
+
+
 
     // Free everything
     free(search); free(start);

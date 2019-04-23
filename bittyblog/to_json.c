@@ -107,9 +107,21 @@ void bb_posts_to_json(JSON_Object *root_object, bb_page_request *req, int format
         json_object_set_number(json_value_get_object(tmp_post), "p_id", p->p_id);
         json_object_set_string(json_value_get_object(tmp_post), "page", p->page);
         json_object_set_string(json_value_get_object(tmp_post), "title", p->title);
-        json_object_set_string(json_value_get_object(tmp_post), "time", p->time);
+        //json_object_set_string(json_value_get_object(tmp_post), "time", p->time);
         json_object_set_string(json_value_get_object(tmp_post), "byline", p->byline);
         json_object_set_string(json_value_get_object(tmp_post), "extra", p->extra);
+
+        // Add different times
+        char time_s[70];
+        struct tm *time = malloc(sizeof(struct tm));
+        gmtime_r(&(p->time_r), time);
+        // Standard time for blog posts
+        strftime(time_s, 70, "%Y-%m-%d %H:%M:%S", time);
+        json_object_set_string(json_value_get_object(tmp_post), "time", time_s);
+        // Special time for RSS
+        strftime(time_s, 70, "%a, %d %b %Y %H:%M:%S %z", time);
+        json_object_set_string(json_value_get_object(tmp_post), "time_rss", time_s);
+        free(time);
 
         // Set default thumbnail if we didn't get one from the database
         if (p->thumbnail == NULL || strcmp(p->thumbnail, "") == 0) {

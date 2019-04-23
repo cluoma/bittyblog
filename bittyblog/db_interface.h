@@ -30,7 +30,7 @@ typedef struct {
 /*
  * Queries for loading posts
  */
-#define N_POSTS_QUERY "SELECT title, a.name_id as page, p.id as id, text, byline, datetime(time, 'unixepoch') AS time, thumbnail, tags \
+#define N_POSTS_QUERY "SELECT title, a.name_id as page, p.id as id, text, byline, time as time_r, datetime(time, 'unixepoch') AS time, thumbnail, tags \
 FROM posts p \
 LEFT JOIN (SELECT tr.post_id, group_concat(t.tag, ', ') `tags` \
 	FROM tags t \
@@ -61,7 +61,7 @@ AND (id IN (SELECT post_id \
 	INNER JOIN pages p ON t2.page_id = p.id \
 	WHERE name_id = ?) \
 	OR page_id IN (SELECT id FROM pages WHERE name_id = ?))"
-#define POST_ID_QUERY "SELECT title, page_id, a.name_id as page, p.id as id, text, byline, datetime(time, 'unixepoch') AS time, thumbnail, tags \
+#define POST_ID_QUERY "SELECT title, page_id, a.name_id as page, p.id as id, text, byline, time as time_r, datetime(time, 'unixepoch') AS time, thumbnail, tags \
 FROM posts p \
 LEFT JOIN pages a ON p.page_id = a.id \
 LEFT JOIN (SELECT tr.post_id, group_concat(t.tag, ', ') `tags` \
@@ -72,7 +72,7 @@ GROUP BY post_id \
 ON p.id = t.post_id \
 WHERE p.id = @ID AND p.visible = 1 \
 AND datetime(time, 'unixepoch') <= datetime('now')"
-#define SEARCH_QUERY "SELECT title, p.id as id, a.name_id as page, text, byline, datetime(time, 'unixepoch') AS time, thumbnail, tags \
+#define SEARCH_QUERY "SELECT title, p.id as id, a.name_id as page, text, byline, time as time_r, datetime(time, 'unixepoch') AS time, thumbnail, tags \
 FROM posts p \
 INNER JOIN (SELECT * FROM pages WHERE name_id = @NAMEID) a ON p.page_id = a.id \
 LEFT JOIN (SELECT tr.post_id, group_concat(t.tag, ', ') `tags` \
@@ -85,7 +85,7 @@ WHERE lower(text) like lower('%' || @KEYWORD || '%') \
 AND p.visible = 1 \
 AND datetime(time, 'unixepoch') <= datetime('now') \
 ORDER BY time DESC"
-#define N_SEARCH_QUERY "SELECT title, p.id as id, a.name_id as page, text, byline, datetime(time, 'unixepoch') AS time, thumbnail, tags \
+#define N_SEARCH_QUERY "SELECT title, p.id as id, a.name_id as page, text, byline, time as time_r, datetime(time, 'unixepoch') AS time, thumbnail, tags \
 FROM posts p \
 INNER JOIN (SELECT * FROM pages WHERE name_id = @NAMEID) a ON p.page_id = a.id \
 LEFT JOIN (SELECT tr.post_id, group_concat(t.tag, ', ') `tags` \
@@ -112,7 +112,7 @@ WHERE lower(text) like lower('%' || @KEYWORD || '%') AND \
 p.visible = 1 \
 AND datetime(time, 'unixepoch') <= datetime('now') \
 ORDER BY time DESC"
-#define N_TAG_QUERY "SELECT title, p.id as id, a.name_id as page, text, byline, datetime(time, 'unixepoch') AS time, thumbnail, tags \
+#define N_TAG_QUERY "SELECT title, p.id as id, a.name_id as page, text, byline, time as time_r, datetime(time, 'unixepoch') AS time, thumbnail, tags \
 FROM posts p \
 LEFT JOIN pages a ON p.page_id = a.id \
 INNER JOIN (SELECT DISTINCT tr.post_id \
@@ -141,7 +141,7 @@ WHERE t.`tag` = ? \
 ON p.id = t.post_id \
 WHERE p.visible = 1 \
 AND datetime(time, 'unixepoch') <= datetime('now')"
-#define MONTH_YEAR_QUERY "SELECT title, p.id as id, a.name_id as page, text, byline, datetime(time, 'unixepoch') AS time, thumbnail, tags \
+#define MONTH_YEAR_QUERY "SELECT title, p.id as id, a.name_id as page, text, byline, time as time_r, datetime(time, 'unixepoch') AS time, thumbnail, tags \
 FROM posts p INNER JOIN (SELECT * FROM pages WHERE name_id = @NAMEID) a ON p.page_id = a.id \
 LEFT JOIN (SELECT tr.post_id, group_concat(t.tag, ', ') `tags` \
 FROM tags t \
