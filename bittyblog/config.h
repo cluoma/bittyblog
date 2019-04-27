@@ -21,4 +21,10 @@
 // Site Behaviour
 #define POSTS_PER_PAGE 5     // How many blog posts should be shown per pagination
 
+// Cache settings
+#define USE_CACHE 0
+#define CACHE_BUCKETS 5000
+#define MAX_CACHE_BYTES 256000000
+#define CACHE_TIMEOUT_SECONDS 60
+
 #endif

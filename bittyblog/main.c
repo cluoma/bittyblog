@@ -23,6 +23,7 @@
 #include <file.h>
 
 #ifdef _FCGI
+#include "cachemap.h"
 #include <fcgi_stdio.h>
 #endif
 
@@ -30,7 +31,22 @@ int main()
 {
     
 #ifdef _FCGI
+    bb_map *cache;
+    char *uri;
+    if (USE_CACHE) {
+        uri = GET_ENV_VAR("REQUEST_URI");
+        cache = bb_map_init(CACHE_BUCKETS, MAX_CACHE_BYTES, CACHE_OVERWRITE);
+    }
     while(FCGI_Accept() >= 0 ) {
+        if (USE_CACHE) {
+            bb_map_node *cached_resp = bb_map_get(cache, uri);
+            fprintf(stderr, "curr time: %ul\n", time(NULL));
+            if (cached_resp != NULL && (time(NULL)-cached_resp->time) <= CACHE_TIMEOUT_SECONDS) {
+                fprintf(stderr, "cache time: %ul\n", cached_resp->time);
+                printf(cached_resp->data);
+                continue;
+            }
+        }
 #endif
     
     // Init page request
@@ -109,6 +125,24 @@ int main()
         printf("text/html\r\n\r\n");
     }
     printf("%s", out->str);
+
+#ifdef _FCGI
+    if (USE_CACHE) {
+        char headers[1000];
+        if (page_style == RSS)
+        {
+            sprintf(headers, "Content-Length: %lu\r\nContent-Type: application/rss+xml\r\n\r\n",
+                out->currentStringLength);
+        }
+        else
+        {
+            sprintf(headers, "Content-Length: %lu\r\nContent-Type: text/html\r\n\r\n",
+                out->currentStringLength);
+        }
+        d_string_prepend(out, headers);
+        bb_map_insert(&cache, uri, out->str, out->currentStringLength);
+    }
+#endif
 
     d_string_free(template, 1);
     d_string_free(out, 1);
