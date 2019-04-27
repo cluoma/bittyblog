@@ -83,9 +83,8 @@ void handle_rewrite(bb_page_request *req)
     else
     {
         bb_cgi_remove_all_var(&(req->q_vars));
+        bb_cgi_add_var(&(req->q_vars), "start", start, strlen(start)+1);
     }
-
-
 
     // Free everything
     free(search); free(start);
