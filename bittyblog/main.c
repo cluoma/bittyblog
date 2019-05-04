@@ -29,20 +29,20 @@
 
 int main()
 {
-    
+
 #ifdef _FCGI
-    bb_map *cache;
     char *uri;
+    bb_map *cache;
     if (USE_CACHE) {
-        uri = GET_ENV_VAR("REQUEST_URI");
-        cache = bb_map_init(CACHE_BUCKETS, MAX_CACHE_BYTES, CACHE_OVERWRITE);
+        cache = bb_map_init(CACHE_INIT_BUCKETS, MAX_CACHE_BYTES, CACHE_TIMEOUT_SECONDS);
     }
-    while(FCGI_Accept() >= 0 ) {
+
+    while(FCGI_Accept() >= 0) {
         if (USE_CACHE) {
+            uri = GET_ENV_VAR("REQUEST_URI");
             bb_map_node *cached_resp = bb_map_get(cache, uri);
-            fprintf(stderr, "curr time: %ul\n", time(NULL));
-            if (cached_resp != NULL && (time(NULL)-cached_resp->time) <= CACHE_TIMEOUT_SECONDS) {
-                fprintf(stderr, "cache time: %ul\n", cached_resp->time);
+            time_t last_db_update = db_get_last_update();
+            if (cached_resp != NULL && cached_resp->time >= last_db_update) {
                 printf(cached_resp->data);
                 continue;
             }
@@ -111,46 +111,63 @@ int main()
             break;
     }
 
-    DString * out = d_string_new("");
+    // Response content
+    DString *out = d_string_new("");
     magnum_populate_from_json(template, root_value, out, TEMPLATE_PATH, NULL);
 
-    // Start of HTML output
-    printf("Content-Length: %lu\r\n", out->currentStringLength);
-
-    // If we do HTML or RSS
-    printf("Content-Type: ");
-    if (page_style == RSS) {
-        printf("application/rss+xml\r\n\r\n");
-    } else {
-        printf("text/html\r\n\r\n");
+    // Response headers
+    DString *headers = d_string_new("");
+    if (page_style == RSS)
+    {
+        d_string_append_printf(
+            headers,
+            "Content-Length: %lu\r\nContent-Type: application/rss+xml\r\n\r\n",
+            out->currentStringLength
+        );
     }
+    else
+    {
+        d_string_append_printf(
+            headers,
+            "Content-Length: %lu\r\nContent-Type: text/html\r\n\r\n",
+            out->currentStringLength
+        );
+    }
+
+    // Start of HTML output
+    printf("%s", headers->str);
     printf("%s", out->str);
 
 #ifdef _FCGI
     if (USE_CACHE) {
-        char headers[1000];
-        if (page_style == RSS)
-        {
-            sprintf(headers, "Content-Length: %lu\r\nContent-Type: application/rss+xml\r\n\r\n",
-                out->currentStringLength);
-        }
-        else
-        {
-            sprintf(headers, "Content-Length: %lu\r\nContent-Type: text/html\r\n\r\n",
-                out->currentStringLength);
-        }
-        d_string_prepend(out, headers);
-        bb_map_insert(&cache, uri, out->str, out->currentStringLength);
+        // Copy uri then finish fastcgi so response can leave while updating cache
+        DString *uri_cpy = d_string_new(uri);
+        FCGI_Finish();
+
+        d_string_prepend(out, headers->str);
+        bb_map_insert(&cache, uri_cpy->str, out->str, out->currentStringLength);
+        d_string_free(uri_cpy, 1);
     }
+    else
+    {
+        FCGI_Finish();
+    }
+    
 #endif
 
     d_string_free(template, 1);
+    d_string_free(headers, 1);
     d_string_free(out, 1);
     json_value_free(root_value);
 
     bb_free(&req);
     
 #ifdef _FCGI
+    }  // Leave Accept loop
+    // Final cleanup
+    if (USE_CACHE) {
+        bb_map_free(cache);
     }
+    FCGI_Finish();
 #endif
 }

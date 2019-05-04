@@ -253,17 +253,18 @@ int set_user_session(const char* user, const char* password, const char* session
 
 // Modules
 Archives load_archives();
-
 char *nmonth_to_smonth(int month);
+// Vector implementation that holds results
+void free_archives(Archives *archives);
 
 // Function to NULL out a Post struct
 void Post_init(Post*);
 void Post_free(Post* p);
 
-// Vector implementation that holds results
-void free_archives(Archives *archives);
-
 // Load pages from database
 bb_vec * db_pages();
+
+// Get the timestamp of when the database was last updated
+time_t db_get_last_update();
 
 #endif /* db_interface_h */

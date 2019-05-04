@@ -44,36 +44,6 @@ sqlite3 *open_database()
         return db;
     }
 }
-sqlite3 *open_database_transaction()
-{
-    // Connect to DB
-    sqlite3 *db = open_database();
-    if (db == NULL) {
-        fprintf(stderr, "Failed to open DB connection.\n");
-        return NULL;
-    }
-
-    // Begin transaction so we can rollback if things go wrong
-    if (sqlite3_exec(db, "BEGIN TRANSACTION;", 0, 0, 0) != SQLITE_OK) {
-        fprintf(stderr, "Couldn't begin transaction.\n");
-        sqlite3_close(db);
-        return NULL;
-    }
-
-    return db;
-}
-int close_database_transaction(sqlite3 *db)
-{
-    // Commit transaction
-    if (sqlite3_exec(db, "COMMIT;", 0, 0, 0) != SQLITE_OK) {
-        fprintf(stderr, "Couldn't commit transaction.\n");
-        sqlite3_close(db);
-        return 0;
-    }
-    sqlite3_close(db);
-
-    return 1;
-}
 
 
 /*
@@ -169,6 +139,59 @@ bad:
     sqlite3_finalize(results);
     if (!db_con_supplied) sqlite3_close(db);
     return 0;
+}
+// Set the time of the last database change
+int db_update_time(sqlite3 *db)
+{
+    if (execute_query(db, NULL, NULL, "DELETE FROM last_update", "") &&
+        execute_query(db, NULL, NULL, "INSERT INTO last_update (time) VALUES(CAST(strftime('%s', 'now') AS INT))", "") )
+    {
+        return 1;
+    }
+    else
+    {
+        return 0;
+    }
+}
+// Open data and begin a transaction so that it can be rolled back
+sqlite3 *open_database_transaction()
+{
+    // Connect to DB
+    sqlite3 *db = open_database();
+    if (db == NULL) {
+        fprintf(stderr, "Failed to open DB connection.\n");
+        return NULL;
+    }
+
+    // Begin transaction so we can rollback if things go wrong
+    if (sqlite3_exec(db, "BEGIN TRANSACTION;", 0, 0, 0) != SQLITE_OK) {
+        fprintf(stderr, "Couldn't begin transaction.\n");
+        sqlite3_close(db);
+        return NULL;
+    }
+
+    return db;
+}
+// Update update timestamp, commit transaction, and close database
+int close_database_transaction(sqlite3 *db)
+{   
+    // Update timestamp
+    int rc = db_update_time(db);
+    if (!rc) {
+        fprintf(stderr, "Couldn't update update timestamp\n");
+        sqlite3_close(db);
+        return 0;
+    }
+
+    // Commit transaction
+    if (sqlite3_exec(db, "COMMIT;", 0, 0, 0) != SQLITE_OK) {
+        fprintf(stderr, "Couldn't commit transaction.\n");
+        sqlite3_close(db);
+        return 0;
+    }
+    sqlite3_close(db);
+
+    return 1;
 }
 
 // Load post data from database
@@ -865,4 +888,11 @@ void free_archives(Archives *archives)
         free(archives->year);
     if( archives->post_count != NULL)
         free(archives->post_count);
+}
+
+time_t db_get_last_update()
+{   
+    time_t time = 0;
+    execute_query(NULL, NULL, &time, "SELECT time FROM last_update", "");
+    return time;
 }

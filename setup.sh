@@ -6,9 +6,11 @@ sqlite3 bittyblog.db "CREATE TABLE \`users\` (\`email\` TEXT NOT NULL UNIQUE, \`
 sqlite3 bittyblog.db "CREATE TABLE \`tags\` (\`id\` INTEGER NOT NULL PRIMARY KEY UNIQUE,\`tag\` TEXT NOT NULL UNIQUE);"
 sqlite3 bittyblog.db "CREATE TABLE \`tags_relate\` (\`tag_id\` INTEGER NOT NULL, \`post_id\` INTEGER NOT NULL, PRIMARY KEY(tag_id,post_id));"
 sqlite3 bittyblog.db "CREATE TABLE \`tags_pages_relate\` (\`tag_id\` INTEGER NOT NULL, \`page_id\` INTEGER NOT NULL, PRIMARY KEY(tag_id,page_id));"
+sqlite3 bittyblog.db "CREATE TABLE \`last_update\` (\`time\` INTEGER NOT NULL);"
 
 sqlite3 bittyblog.db "INSERT INTO pages (name_id, name, style) VALUES ('blog', 'Blog', 1), ('contact', 'Contact', 2);"
 sqlite3 bittyblog.db "INSERT INTO posts (page_id, title, time, text, byline, visible) VALUES (1, 'Your First Post', 1551632315, 'Here is where your blog post text would go.', 'Describe your blog post in one sentence', 1), (2, 'Contact', 1551632315, 'Tell your readers where to contact you', '', 1);"
+sqlite3 bittyblog.db "INSERT INTO last_update (time) VALUES(CAST(strftime('%s', 'now') AS INT));"
 
 echo Database created
 echo Create an administrator account
