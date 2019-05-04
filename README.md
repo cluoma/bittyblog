@@ -67,17 +67,21 @@ A tiny blogging platform with the following features:
     - Moves everything into a new `www/` directory inside the current directory
 
 6. Give `www-data` access to bittyblog
-    - `cd .. && sudo chown :www-data -R bittyblog/`
+    - `cd .. && sudo sudo chown :www-data -R bittyblog/`
 
 7. Configure lighttpd
-    * `server.document-root	= "/path/to/bittyblog/www"`
-    * ```
+    ```
+    # Set document root to you bittyblog path
+    server.document-root = "/path/to/bittyblog/www"
+    ```
+    ```
     # Add this if you want permalinks
     url.rewrite-if-not-file = (
         "^([^?]*)\??(.*)?$" => "/cgi-bin/bb.cgi?rewrite=$1&$2"
     )
     ```
-    * ```
+    ```
+    # Add this if you are using fastCGI
     fastcgi.server = (
         "bb.cgi" =>
         ((
