@@ -43,7 +43,7 @@ int main()
             bb_map_node *cached_resp = bb_map_get(cache, uri);
             time_t last_db_update = db_get_last_update();
             if (cached_resp != NULL && cached_resp->time >= last_db_update) {
-                printf(cached_resp->data);
+                printf("%s", cached_resp->data);
                 continue;
             }
         }
