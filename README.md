@@ -4,7 +4,7 @@ A tiny blogging platform with the following features:
 * compiles to 2 executables and a single sqlite3 database for easy backups
 * permalinks using URL rewrites
 * fastCGI or classic CGI modes
-* manage posts and pages through a web interface
+* customize pages with mustache HTML templates
 * simple cache for fast responses
 
 # Installation
