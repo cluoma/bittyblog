@@ -70,7 +70,31 @@ A tiny blogging platform with the following features:
     - `cd .. && sudo chown :www-data -R bittyblog/`
 
 7. Configure lighttpd
-    
+    * `server.document-root	= "/path/to/bittyblog/www"`
+    * ```
+    # Add this if you want permalinks
+    url.rewrite-if-not-file = (
+        "^([^?]*)\??(.*)?$" => "/cgi-bin/bb.cgi?rewrite=$1&$2"
+    )
+    ```
+    * ```
+    fastcgi.server = (
+        "bb.cgi" =>
+        ((
+            "bin-path" => "/path/to/www/cgi-bin/bb.cgi",
+            "host" => "127.0.0.1",
+            "port" => 65000,
+		    "kill-signal" => 10,
+		    "max-procs" => 2
+        )),
+        "bbadmin.cgi" =>
+        ((
+            "bin-path" => "/path/to/www/cgi-bin/bbadmin.cgi",
+            "host" => "127.0.0.1",
+            "port" => 64000
+        ))
+    )
+    ```
 
 # Credits
 
