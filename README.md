@@ -85,19 +85,19 @@ A tiny blogging platform with the following features:
     fastcgi.server = (
         "bb.cgi" =>
         ((
-            "bin-path" => "/path/to/www/cgi-bin/bb.cgi",
+	    "bin-path" => "/path/to/www/cgi-bin/bb.cgi",
             "host" => "127.0.0.1",
             "port" => 65000,
-	    "kill-signal" => 10,
-	    "max-procs" => 2
+            "kill-signal" => 10,
+            "max-procs" => 2
         )),
         "bbadmin.cgi" =>
         ((
             "bin-path" => "/path/to/www/cgi-bin/bbadmin.cgi",
             "host" => "127.0.0.1",
             "port" => 64000,
-	    "kill-signal" => 10,
-	    "max-procs" => 1
+            "kill-signal" => 10,
+            "max-procs" => 1
         ))
     )
     ```
