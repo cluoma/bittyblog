@@ -53,7 +53,7 @@ A tiny blogging platform with the following features:
         - bittyblog has the option to enable an in-memory cache. Please pay attention to your machines available memory when setting the cache size.
         - `USE_CACHE` set to 0 to disable, anything else will enable the cache
         - `CACHE_INIT_BUCKETS` the initial size of the cache. The cache will be expanded if needed, set to a low value.
-        - `MAX_CACHE_BYTES` the maximum number of bytes of stored payload. Not that this does not count the memory needed for data structures. Actual memory usage will be 1.2-1.5 times higher than the number set here.
+        - `MAX_CACHE_BYTES` the maximum number of bytes of stored payload. Note that this does not count the memory needed for data structures. Actual memory usage will be 1.2-1.5 times higher than the number set here when the cache is full.
         - `CACHE_TIMEOUT_SECONDS` cache entries older than this will be removed if the cache starts to run out available space.
 
 4. Enable fastCGI
