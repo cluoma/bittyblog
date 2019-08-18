@@ -103,7 +103,7 @@ query_var * bb_cgi_get_uri(query_var *qv, const char *uri_str)
     strcpy(str_cpy, uri_str);
 
     char *val;
-    char key[10];
+    char key[18];
     int depth = 0;
     while ((val = strsep(&str_cpy, "/")) != NULL)
     {
