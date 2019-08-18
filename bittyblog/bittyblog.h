@@ -41,11 +41,6 @@ typedef struct {
     bb_vec *tags;
 } Post;
 
-typedef struct {
-    Post *p;
-    int n;
-} vector_p;
-
 // Style definitions
 enum bb_page_styles {
     BLOG_FULL_POST  = 0,

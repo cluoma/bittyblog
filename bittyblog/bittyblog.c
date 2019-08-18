@@ -111,7 +111,6 @@ void bb_free(bb_page_request *req)
 
     // Free list of posts
     if (req->posts != NULL) {
-        //vector_p_free(req->posts);
         bb_vec_free(req->posts);
     }
 }
