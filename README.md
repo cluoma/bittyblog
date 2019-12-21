@@ -26,7 +26,7 @@ A tiny blogging platform with the following features:
 ## Step-by-step Guide for lighttpd+fastCGI+caching
 
 1. Ensure all pre-requisites are installed on your system:
-    - `sqlite3 libsqlite3-dev libfastcgi lighttpd`
+    - `sqlite3 libsqlite3-dev zlib1g-dev libfastcgi lighttpd`
 
 2. Clone bittyblog
     - `git clone https://github.com/cluoma/bittyblog`
