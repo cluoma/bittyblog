@@ -27,6 +27,7 @@ void bb_archives_to_json(JSON_Object *, Archives *);
 /*
  * For Admin stuff
  */
+void bb_users_to_json_admin(JSON_Object *root_object, bb_page_request *req, bb_vec * users, int action);
 void bb_posts_to_json_admin(JSON_Object *root_object, bb_page_request *req, bb_vec *posts, int action);
 void bb_pages_to_json_admin(JSON_Object *root_object, bb_page_request *req, int page_id, int action);
 

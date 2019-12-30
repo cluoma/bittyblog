@@ -201,8 +201,10 @@ int load_posts_cb(sqlite3_stmt *results, void* data) {
     while(sqlite3_step(results) == SQLITE_ROW)
     {
         // Realloc memory for a new post
-        Post *post = malloc(sizeof(Post));
-        Post_init(post);
+        bb_post *post = malloc(sizeof(bb_post));
+        if (post == NULL) return 1;
+        if (bb_post_init(post) != 0)
+            return 1;
 
         int col_count = sqlite3_column_count(results);
         for (int i = 0; i < col_count; i++) {
@@ -255,6 +257,20 @@ int load_posts_cb(sqlite3_stmt *results, void* data) {
                     const char *tags = (char *) sqlite3_column_text(results, i);
                     post->tags = tokenize_tags(tags, ",");
                 }
+            } else if (strcmp(col_name, "user_name_id") == 0) {
+                if (sqlite3_column_type(results, i) != SQLITE_NULL) {
+                    const char *user_name_id = (char *) sqlite3_column_text(results, i);
+                    const int user_name_id_len = sqlite3_column_bytes(results, i);
+                    post->user.name_id = calloc(user_name_id_len + 1, 1);
+                    memcpy(post->user.name_id, user_name_id, user_name_id_len);
+                }
+            } else if (strcmp(col_name, "user_name") == 0) {
+                if (sqlite3_column_type(results, i) != SQLITE_NULL) {
+                    const char *user_name = (char *) sqlite3_column_text(results, i);
+                    const int user_name_len = sqlite3_column_bytes(results, i);
+                    post->user.name = calloc(user_name_len + 1, 1);
+                    memcpy(post->user.name, user_name, user_name_len);
+                }
             }
         }
         bb_vec_add(vp, post);
@@ -262,10 +278,15 @@ int load_posts_cb(sqlite3_stmt *results, void* data) {
     return 0;
 }
 
+void vec_post_free(bb_post *p)
+{
+    bb_post_free(p);
+    free(p);
+}
 bb_vec * db_ntag(char* tag, int count, int offset)
 {
     bb_vec * all_posts = malloc(sizeof(bb_vec));
-    bb_vec_init(all_posts, Post_free);
+    bb_vec_init(all_posts, vec_post_free);
     execute_query(NULL, load_posts_cb, all_posts,
                 N_TAG_QUERY,
                 "sii", tag, count, offset);
@@ -274,7 +295,7 @@ bb_vec * db_ntag(char* tag, int count, int offset)
 bb_vec * db_search(char* page_name_id, char *keyword)
 {   
     bb_vec * all_posts = malloc(sizeof(bb_vec));
-    bb_vec_init(all_posts, Post_free);
+    bb_vec_init(all_posts, vec_post_free);
     execute_query(NULL, load_posts_cb, all_posts,
                 SEARCH_QUERY,
                 "ss", page_name_id, keyword);
@@ -283,7 +304,7 @@ bb_vec * db_search(char* page_name_id, char *keyword)
 bb_vec * db_nsearch(char* page_name_id, char *keyword, int count, int offset)
 {
     bb_vec * all_posts = malloc(sizeof(bb_vec));
-    bb_vec_init(all_posts, Post_free);
+    bb_vec_init(all_posts, vec_post_free);
     execute_query(NULL, load_posts_cb, all_posts,
                 N_SEARCH_QUERY,
                 "ssii", page_name_id, keyword, count, offset);
@@ -292,7 +313,7 @@ bb_vec * db_nsearch(char* page_name_id, char *keyword, int count, int offset)
 bb_vec * db_monthyear(char* page_name_id, int month, int year)
 {
     bb_vec * all_posts = malloc(sizeof(bb_vec));
-    bb_vec_init(all_posts, Post_free);
+    bb_vec_init(all_posts, vec_post_free);
     execute_query(NULL, load_posts_cb, all_posts,
                 MONTH_YEAR_QUERY,
                 "sii", page_name_id,  month, year);
@@ -301,7 +322,7 @@ bb_vec * db_monthyear(char* page_name_id, int month, int year)
 bb_vec * db_nposts(char* page_name_id, int count, int offset)
 {
     bb_vec * all_posts = malloc(sizeof(bb_vec));
-    bb_vec_init(all_posts, Post_free);
+    bb_vec_init(all_posts, vec_post_free);
     execute_query(NULL, load_posts_cb, all_posts,
                 N_POSTS_QUERY,
                 "ssii", page_name_id, page_name_id,  count, offset);
@@ -310,7 +331,7 @@ bb_vec * db_nposts(char* page_name_id, int count, int offset)
 bb_vec * db_id(int id)
 {
     bb_vec * all_posts = malloc(sizeof(bb_vec));
-    bb_vec_init(all_posts, Post_free);
+    bb_vec_init(all_posts, vec_post_free);
     execute_query(NULL, load_posts_cb, all_posts,
                 POST_ID_QUERY,
                 "i", id);
@@ -332,7 +353,6 @@ int db_count(char* page_name_id)
     int count = 0;
 
     success = execute_query(NULL, db_count_cb, &count,
-        //"SELECT COUNT(1) FROM posts p INNER JOIN (SELECT * FROM pages WHERE name_id = @NAMEID) a ON p.page_id = a.id WHERE p.visible = 1 ",
         N_POSTS_COUNT_QUERY,
         "ss", page_name_id, page_name_id);
 
@@ -379,16 +399,17 @@ int db_pages_cb(sqlite3_stmt* st, void* a) {
         bb_page *page = malloc(sizeof(bb_page));
 
         page->id = sqlite3_column_int(st, 0);
+
         page->id_name = calloc(sqlite3_column_bytes(st, 1)+1, 1);
-        
         memcpy(page->id_name,
                 sqlite3_column_text(st, 1),
                 sqlite3_column_bytes(st, 1));
 
-        page->name = calloc(sqlite3_column_bytes(st, 2)+1, 2);
+        page->name = calloc(sqlite3_column_bytes(st, 2)+1, 1);
         memcpy(page->name,
                 sqlite3_column_text(st, 2),
                 sqlite3_column_bytes(st, 2));
+
         page->style = sqlite3_column_int(st, 3);
 
         if (sqlite3_column_type(st, 4) != SQLITE_NULL) {
@@ -419,13 +440,69 @@ bb_vec * db_pages()
     return pages;
 }
 
+/*
+ * Get a list of users from the database
+ */
+int db_users_cb(sqlite3_stmt* st, void* a) {
+    bb_vec *users = (bb_vec *)a;
+    while(sqlite3_step(st) == SQLITE_ROW)
+    {
+        // Realloc memory for a new post
+        bb_user *user = malloc(sizeof(bb_user));
+
+        user->id = sqlite3_column_int(st, 0);
+
+        user->email = calloc(sqlite3_column_bytes(st, 1)+1, 1);
+        memcpy(user->email,
+                sqlite3_column_text(st, 1),
+                sqlite3_column_bytes(st, 1));
+        
+        user->name_id = calloc(sqlite3_column_bytes(st, 2)+1, 1);
+        memcpy(user->name_id,
+                sqlite3_column_text(st, 2),
+                sqlite3_column_bytes(st, 2));
+        
+        user->name = calloc(sqlite3_column_bytes(st, 3)+1, 1);
+        memcpy(user->name,
+                sqlite3_column_text(st, 3),
+                sqlite3_column_bytes(st, 3));
+
+        bb_vec_add(users, user);
+    }
+    return 0;
+}
+void db_users_free_cb(void *d) {
+    bb_user *user = (bb_user *)d;
+    free(user->email);
+    free(user->name_id);
+    free(user->name);
+    free(user);
+}
+bb_vec * db_admin_all_users()
+{
+    bb_vec *users = malloc(sizeof(bb_vec));
+    bb_vec_init(users, db_users_free_cb);
+    
+    execute_query(NULL, db_users_cb, users, LOAD_USERS, "");
+    
+    return users;
+}
+bb_vec * db_admin_user(int id)
+{
+    bb_vec *users = malloc(sizeof(bb_vec));
+    bb_vec_init(users, db_users_free_cb);
+    
+    execute_query(NULL, db_users_cb, users, LOAD_USER_ID, "i", id);
+    
+    return users;
+}
 
 /*
  * Admin interface functions
  */
 bb_vec * db_admin_all_posts_preview() {
     bb_vec * all_posts = malloc(sizeof(bb_vec));
-    bb_vec_init(all_posts, Post_free);
+    bb_vec_init(all_posts, vec_post_free);
     execute_query(NULL, load_posts_cb, all_posts,
                 ADMIN_ALL_POSTS_QUERY,
                 "");
@@ -433,7 +510,7 @@ bb_vec * db_admin_all_posts_preview() {
 }
 bb_vec * db_admin_id(int id) {
     bb_vec * all_posts = malloc(sizeof(bb_vec));
-    bb_vec_init(all_posts, Post_free);
+    bb_vec_init(all_posts, vec_post_free);
     execute_query(NULL, load_posts_cb, all_posts,
                 ADMIN_POST_ID_QUERY,
                 "i", id);
@@ -548,7 +625,7 @@ int db_update_tags(sqlite3 *db, bb_vec *tags, int id, int relation) {
 }
 
 // Used to create a new post, post_id is automatically generated by the DB
-int db_new_post(Post *p) {
+int db_new_post(bb_post *p) {
     int rc; // return values from sqlite3 functions
     int new_id; // rowid of new post
 
@@ -587,7 +664,7 @@ int db_new_post(Post *p) {
     return 1;
 }
 
-int db_update_post(Post *p) {
+int db_update_post(bb_post *p) {
     int rc;
 
     // Connect to DB
@@ -753,6 +830,78 @@ int db_delete_page(int page_id) {
     return 1;
 }
 
+int db_admin_new_user(bb_user *u, const char *password) {
+    int rc; // return values from sqlite3 functions
+
+    // Connect to DB
+    sqlite3 *db = open_database_transaction();
+    if (db == NULL) {
+        return 0;
+    }
+
+    // Add post to database
+    rc = execute_query(db, NULL, NULL, ADMIN_NEW_USER, "ssss",
+                u->email, u->name_id, u->name, password);
+    if (!rc) {
+        fprintf(stderr, "Failed to add user to database\n");
+        sqlite3_close(db);
+        return 0;
+    }
+
+    // Close connection
+    if (!close_database_transaction(db)) {
+        return 0;
+    }
+    return 1;
+}
+int db_admin_update_user(bb_user *u) {
+    int rc; // return values from sqlite3 functions
+
+    // Connect to DB
+    sqlite3 *db = open_database_transaction();
+    if (db == NULL) {
+        return 0;
+    }
+
+    // Add post to database
+    rc = execute_query(db, NULL, NULL, ADMIN_UPDATE_USER, "sssi",
+                u->email, u->name_id, u->name, u->id);
+    if (!rc) {
+        fprintf(stderr, "Failed to update user to database\n");
+        sqlite3_close(db);
+        return 0;
+    }
+
+    // Close connection
+    if (!close_database_transaction(db)) {
+        return 0;
+    }
+    return 1;
+}
+int db_admin_delete_user(int id) {
+    int rc; // return values from sqlite3 functions
+
+    // Connect to DB
+    sqlite3 *db = open_database_transaction();
+    if (db == NULL) {
+        return 0;
+    }
+
+    // Add post to database
+    rc = execute_query(db, NULL, NULL, ADMIN_DELETE_USER, "i", id);
+    if (!rc) {
+        fprintf(stderr, "Failed to update user to database\n");
+        sqlite3_close(db);
+        return 0;
+    }
+
+    // Close connection
+    if (!close_database_transaction(db)) {
+        return 0;
+    }
+    return 1;
+}
+
 Archives load_archives() {
 
     Archives archives;
@@ -821,13 +970,37 @@ int verify_user(const char* user, const char* password) {
     return 0;
 }
 
-int verify_session(const char* session) {
+int verify_session_cb(sqlite3_stmt* st, void* a) {
+    bb_user *u = (bb_user *)a;
+
+    if(sqlite3_step(st) == SQLITE_ROW) {
+        u->id = sqlite3_column_int(st, 0);
+
+        u->email = calloc(sqlite3_column_bytes(st, 1)+1, 1);
+        memcpy(u->email,
+                sqlite3_column_text(st, 1),
+                sqlite3_column_bytes(st, 1));
+        
+        u->name_id = calloc(sqlite3_column_bytes(st, 2)+1, 1);
+        memcpy(u->name_id,
+                sqlite3_column_text(st, 2),
+                sqlite3_column_bytes(st, 2));
+        
+        u->name = calloc(sqlite3_column_bytes(st, 3)+1, 1);
+        memcpy(u->name,
+                sqlite3_column_text(st, 3),
+                sqlite3_column_bytes(st, 3));
+    } else {
+        return 1;
+    }
+    return 0;
+}
+int verify_session(const char* session, bb_user *u) {
     int success = 0;
-    int exists = 0;
 
-    success = execute_query(NULL, verify_user_cb, &exists, CHECK_SESSION, "s", session);
+    success = execute_query(NULL, verify_session_cb, u, CHECK_SESSION, "s", session);
 
-    if (success && exists)
+    if (success)
         return 1;
     
     return 0;
@@ -849,33 +1022,6 @@ int set_user_session(const char* user, const char* password, const char* session
         return 1;
     
     return 0;
-}
-
-void Post_init(Post* p) {
-    p->p_id = -1;
-    p->page_id = -1;
-    p->time_r = 0;
-    p->page = NULL;
-    p->title = NULL;
-    p->text = NULL;
-    p->time = NULL;
-    p->byline = NULL;
-    p->extra = NULL;
-    p->thumbnail = NULL;
-    p->visible = 0;
-    p->tags = NULL;
-}
-
-void Post_free(Post* p) {
-    if (p->page != NULL)        free(p->page);
-    if (p->title != NULL)       free(p->title);
-    if (p->text != NULL)        free(p->text);
-    if (p->time != NULL)        free(p->time);
-    if (p->byline != NULL)      free(p->byline);
-    if (p->extra != NULL)       free(p->extra);
-    if (p->thumbnail != NULL)   free(p->thumbnail);
-    if (p->tags != NULL)        bb_vec_free(p->tags);
-    free(p);
 }
 
 void free_archives(Archives *archives)

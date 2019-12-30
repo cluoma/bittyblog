@@ -18,24 +18,6 @@
 #include "config.h"
 #include "db_interface.h"
 
-char *bb_strcpy(const char* str)
-{
-    char *ret;
-    if (str == NULL)
-    {
-        ret = malloc(1);
-        ret[0] = '\0';
-    }
-    else
-    {
-        int len = strlen(str);
-        ret = malloc(len+1);
-        strcpy(ret, str);
-        ret[len] = '\0';
-    }
-    return ret;
-}
-
 void handle_rewrite(bb_page_request *req)
 {
     // Save these
@@ -120,7 +102,7 @@ void bb_init(bb_page_request *req, int options)
 {
     // Get environment variables
     req->request_method = GET_ENV_VAR("REQUEST_METHOD");
-    req->script_name = GET_ENV_VAR("SCRIPT_NAME");
+    req->script_name    = GET_ENV_VAR("SCRIPT_NAME");
     
     // Parse query string and POST data
     req->q_vars = NULL;
@@ -143,7 +125,7 @@ void bb_init(bb_page_request *req, int options)
     // Get the requested page name, default to 'blog' if none was supplied
     char * page = bb_cgi_get_var(req->q_vars, "page");
     if( page == NULL ) {
-        bb_cgi_add_var(&req->q_vars, "page", "blog", strlen("blog")+1);
+        bb_cgi_add_var(&req->q_vars, "page", DEFAULT_PAGE, strlen(DEFAULT_PAGE)+1);
         req->page_name = bb_cgi_get_var(req->q_vars, "page");
     }
     else {
@@ -163,11 +145,11 @@ void bb_init(bb_page_request *req, int options)
     }
 
     // Fill in the rest of the needed info
-    req->copyright_owner = COPYRIGHT_OWNER;
-    req->navbar_title = NAVBAR_TITLE;
-    req->html_title = HTML_TITLE;
-    req->db_path = DB_PATH;
-    req->image_dir = IMAGE_PATH;
+    req->copyright_owner    = COPYRIGHT_OWNER;
+    req->navbar_title       = NAVBAR_TITLE;
+    req->html_title         = HTML_TITLE;
+    req->db_path            = DB_PATH;
+    req->image_dir          = IMAGE_PATH;
 
     // Init variables for blog posts
     req->posts = NULL;
@@ -218,6 +200,97 @@ void bb_load_posts(bb_page_request *req) {
         entries = db_id((int)bb_strtol(id, 1));
     }
     req->posts = entries;
+}
+
+/*
+ * bb_user struct fuctions
+ */
+int bb_user_init(bb_user *u)
+{
+    u->id       = -1;
+    u->email    = NULL;
+    u->name_id  = NULL;
+    u->name     = NULL;
+
+    return 0;
+}
+void bb_user_free(bb_user *u)
+{
+    if(u->email != NULL)    free(u->email);
+    if(u->name_id != NULL)  free(u->name_id);
+    if(u->name != NULL)     free(u->name);
+}
+
+/*
+ * bb_post struct functions
+ */
+int bb_post_init(bb_post* p) {
+    p->p_id = -1;
+    p->page_id = -1;
+    p->time_r = 0;
+    p->page = NULL;
+    p->title = NULL;
+    p->text = NULL;
+    p->time = NULL;
+    p->byline = NULL;
+    p->extra = NULL;
+    p->thumbnail = NULL;
+    p->visible = 0;
+    p->tags = NULL;
+
+    bb_user_init(&(p->user));
+
+    return 0;
+}
+void bb_post_free(bb_post* p) {
+    if (p->page != NULL)        free(p->page);
+    if (p->title != NULL)       free(p->title);
+    if (p->text != NULL)        free(p->text);
+    if (p->time != NULL)        free(p->time);
+    if (p->byline != NULL)      free(p->byline);
+    if (p->extra != NULL)       free(p->extra);
+    if (p->thumbnail != NULL)   free(p->thumbnail);
+
+    if (p->tags != NULL)        bb_vec_free(p->tags);
+    
+    bb_user_free(&(p->user));
+}
+
+// Parse string into long, return def if none found or error
+long bb_strtol(char *str, long def)
+{
+    long ret_val;
+    char *endptr;
+    errno = 0;
+
+    if (str == NULL) {
+        return def;
+    }
+
+    ret_val = strtol(str, &endptr, 10);
+    if (errno || endptr == str) {
+        return def;
+    } else {
+        return ret_val;
+    }
+}
+
+char *bb_strcpy(const char* str)
+{
+    char *ret;
+    if (str == NULL)
+    {
+        ret = malloc(1);
+        ret[0] = '\0';
+    }
+    else
+    {
+        int len = strlen(str);
+        ret = malloc(len+1);
+        strcpy(ret, str);
+        ret[len] = '\0';
+    }
+    return ret;
 }
 
 bb_vec * bb_image_list(bb_page_request *req, int thumbnail_only) {
@@ -292,25 +365,7 @@ bb_vec * tokenize_tags(const char *str, const char * delim)
     return vec;
 }
 
-// Parse string into long, return def if none found or error
-long bb_strtol(char *str, long def)
-{
-    long ret_val;
-    char *endptr;
-    errno = 0;
-
-    if (str == NULL) {
-        return def;
-    }
-
-    ret_val = strtol(str, &endptr, 10);
-    if (errno || endptr == str) {
-        return def;
-    } else {
-        return ret_val;
-    }
-}
-
+// Checks the HTTP_ACCEPT_ENCODING env var for the argument given in enc
 int bb_check_accept_encoding(const char *enc)
 {
     char *accept_encoding = GET_ENV_VAR("HTTP_ACCEPT_ENCODING");
@@ -321,20 +376,9 @@ int bb_check_accept_encoding(const char *enc)
     return 1;
 }
 
-// Compress a buffer using gzip, return compressed data in a new buffer
+// Compress a buffer using gzip, return byte length of compressed data
 unsigned long bb_gzip_compress(const char* buf, int buf_len, char* out, int out_len)
 {
-    // *cmp_len = compressBound(buf_len);
-    // char *cmp_buf = malloc(*cmp_len);
-
-    // int r = compress2(cmp_buf, cmp_len, buf, buf_len, Z_BEST_COMPRESSION);
-
-    // if ( r != Z_OK ) {
-    //     free(cmp_buf);
-    //     return NULL;
-    // }
-    // return cmp_buf;
-
     // Initialize stream
     z_stream zs;
     zs.zalloc = Z_NULL;

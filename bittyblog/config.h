@@ -14,6 +14,7 @@
 #define COPYRIGHT_OWNER "bittyblog"
 #define NAVBAR_TITLE "bittyblog"
 #define HTML_TITLE "bittyblog - a sample bittyblog"
+#define DEFAULT_PAGE "blog"
 #define DB_PATH "~/bittyblog.db"
 #define IMAGE_PATH "~/www/images"
 #define TEMPLATE_PATH "~/templates"

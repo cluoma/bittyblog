@@ -9,6 +9,7 @@
 
     <div class="admin-sidenav">
         <h3>{{navbar_title}}</h3>
+        <a href="{{script_name}}?sid={{sid}}&c=users">Users</a>
         <a href="{{script_name}}?sid={{sid}}&c=pages">Pages</a>
         <a href="{{script_name}}?sid={{sid}}&c=posts">Posts</a>
         <a href="{{script_name}}?sid={{sid}}&c=media">Images</a>
@@ -16,6 +17,60 @@
 
     <div class="admin-main">
     
+    <h1>Logged in as {{user}}</h1>
+
+    {{#category_users}}
+    <h1> Users: </h1>
+
+    <!-- New Page Button -->
+    <form action="{{script_name}}" method="GET">
+        <input type="hidden" name="sid" value="{{sid}}" />
+        <input type="hidden" name="c" value="users" />
+        <input type="hidden" name="a" value="new" />
+        <button type="submit">New User</button><br>
+    </form>
+
+    <table>
+        <tr><th>Edit</th><th>ID</th><th>Email</th><th>URL Name ID</th><th>Proper Name</th><th>Delete</th></tr>
+        {{#users}}
+        <tr>
+            <td><a href="{{script_name}}?sid={{sid}}&c=users&a=update&id={{id}}">Edit</a></td>
+            <td>{{id}}</td><td>{{email}}</td><td>{{name_id}}</td><td>{{name}}</td>
+            <td>
+                <form action="{{script_name}}?sid={{sid}}&c=users&a=delete" method="POST">
+                <input type="hidden" name="id" value="{{id}}" />
+                <button type="submit">Delete</button>
+                </form>
+            </td>
+        </tr>
+        {{/users}}
+    </table>
+    {{/category_users}}
+
+    {{#category_new_users}}
+    <form role="form" method="post" action="{{script_name}}?sid={{sid}}&c=users&a=new">
+        <label for="email">Email:</label><br><textarea name="email" id="email" rows="1" cols="100"></textarea><br>
+        <label for="name_id">URL Name ID:</label><br><textarea name="name_id" id="name_id" rows="1" cols="100"></textarea><br>
+        <label for="name">Name:</label><br><textarea name="name" id="name" rows="1" cols="100"></textarea><br>
+        <label for="password">Password:</label><br><textarea name="password" id="password" rows="1" cols="100"></textarea><br>
+        <button type="submit">Submit</button>
+    </form>
+    {{/category_new_users}}
+
+    <!-- Different types of forms for posts edit, and create -->
+    {{#category_edit_users}}
+    {{#users}}
+    <form role="form" method="post" action="{{script_name}}?sid={{sid}}&c=users&a=update">
+        <label for="email">Email:</label><br><textarea name="email" id="email" rows="1" cols="100">{{email}}</textarea><br>
+        <label for="name_id">URL Name ID:</label><br><textarea name="name_id" id="name_id" rows="1" cols="100">{{name_id}}</textarea><br>
+        <label for="name">Name:</label><br><textarea name="name" id="name" rows="1" cols="100">{{name}}</textarea><br>
+        <input id="id" name="id" type="hidden" value="{{id}}">
+        <button type="submit">Submit</button>
+    </form>
+    {{/users}}
+    {{/category_edit_users}}
+
+
     {{#category_pages}}
     <h1> Your Pages: </h1>
 

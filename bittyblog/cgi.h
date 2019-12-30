@@ -23,9 +23,9 @@ typedef struct query_var {
 } query_var;
 
 // Return a linked list of query string key-value pairs
-query_var * bb_cgi_get_query(const char *query_s);
-query_var * bb_cgi_get_post(query_var *);
-query_var * bb_cgi_get_uri(query_var *, const char *);
+query_var * bb_cgi_get_query(const char *query_s); // add query string variables to list
+query_var * bb_cgi_get_post(query_var *); // add variables from post data to list
+query_var * bb_cgi_get_uri(query_var *, const char *); // add uri path to list as uripathX X in [0,MAX_INT]
 
 char * bb_cgi_get_var(query_var *qv, const char* key);
 long bb_cgi_get_var_len(query_var *qv, const char* key);

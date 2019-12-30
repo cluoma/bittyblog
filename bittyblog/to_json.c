@@ -102,7 +102,7 @@ void bb_posts_to_json(JSON_Object *root_object, bb_page_request *req, int format
 
     JSON_Array *posts = json_value_get_array(json_value_init_array());
     for (int i = 0; i < bb_vec_count(entries); i++) {
-        Post *p = (Post*)bb_vec_get(entries, i);
+        bb_post *p = (bb_post*)bb_vec_get(entries, i);
         JSON_Value *tmp_post = json_value_init_object();
         json_object_set_number(json_value_get_object(tmp_post), "p_id", p->p_id);
         json_object_set_string(json_value_get_object(tmp_post), "page", p->page);
@@ -149,6 +149,10 @@ void bb_posts_to_json(JSON_Object *root_object, bb_page_request *req, int format
             json_object_set_value(json_value_get_object(tmp_post), "tags", json_array_get_wrapping_value(json_tags));
         }
 
+        // Add user data
+        json_object_set_string(json_value_get_object(tmp_post), "user_name_id", p->user.name_id);
+        json_object_set_string(json_value_get_object(tmp_post), "user_name", p->user.name);
+
         // Append post to the array of posts
         json_array_append_value(posts, tmp_post);
     }
@@ -193,7 +197,7 @@ void bb_posts_to_json_admin(JSON_Object *root_object, bb_page_request *req, bb_v
         JSON_Array *json_posts = json_value_get_array(json_value_init_array());
         for (int i = 0; i < bb_vec_count(posts); i++)
         {
-            Post *p = (Post *)bb_vec_get(posts, i);
+            bb_post *p = (bb_post *)bb_vec_get(posts, i);
 
             JSON_Value *tmp_post = json_value_init_object();
             json_object_set_number(json_value_get_object(tmp_post), "p_id", p->p_id);
@@ -390,5 +394,44 @@ void bb_pages_to_json_admin(JSON_Object *root_object, bb_page_request *req, int 
             json_array_append_value(json_styles, tmp2);
         }
         json_object_set_value(root_object, "styles", json_array_get_wrapping_value(json_styles));
+    }
+}
+
+void bb_users_to_json_admin(JSON_Object *root_object, bb_page_request *req, bb_vec * users, int action)
+{
+    switch(action) {
+        case VIEW:
+            json_object_set_boolean(root_object, "category_users", 1);
+            break;
+        case EDIT:
+            json_object_set_boolean(root_object, "category_edit_users", 1);
+            break;
+        case NEW:
+            json_object_set_boolean(root_object, "category_new_users", 1);
+            break;
+        default:
+            break;
+    }
+
+    // Add pages to JSON
+    if (action == VIEW || action == EDIT)
+    {
+        JSON_Array *json_users = json_value_get_array(json_value_init_array());
+        for (int i = 0; i < bb_vec_count(users); i++)
+        {   
+            JSON_Value *tmp = json_value_init_object();
+            json_object_set_number(json_value_get_object(tmp), "id", ((bb_user *)bb_vec_get(users, i))->id);
+            json_object_set_string(json_value_get_object(tmp), "email", ((bb_user *)bb_vec_get(users, i))->email);
+            json_object_set_string(json_value_get_object(tmp), "name_id", ((bb_user *)bb_vec_get(users, i))->name_id);
+            json_object_set_string(json_value_get_object(tmp), "name", ((bb_user *)bb_vec_get(users, i))->name);
+
+            // Add arrary of Styles to page
+            if (action == EDIT)
+            {
+                
+            }
+            json_array_append_value(json_users, tmp);
+        }
+        json_object_set_value(root_object, "users", json_array_get_wrapping_value(json_users));
     }
 }

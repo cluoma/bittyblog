@@ -26,6 +26,15 @@
 #define ALL             0
 #define THUMBNAILS      1
 
+// User information
+typedef struct {
+    int id;
+    char* email;
+    char* name_id;
+    char* name;
+} bb_user;
+
+// Post struct
 typedef struct {
     int p_id;
     int page_id;
@@ -38,8 +47,18 @@ typedef struct {
     char *byline;
     char *extra;
     char *thumbnail;
+    bb_user user;
     bb_vec *tags;
-} Post;
+} bb_post;
+
+// Information on the type of webpage
+typedef struct {
+    int id;
+    char* id_name;
+    char* name;
+    int style;
+    bb_vec *tags;
+} bb_page;
 
 // Style definitions
 enum bb_page_styles {
@@ -50,15 +69,6 @@ enum bb_page_styles {
     MISSING,
     STYLE_LAST
 };
-
-// Information on the type of webpage
-typedef struct {
-    int id;
-    char* id_name;
-    char* name;
-    int style;
-    bb_vec *tags;
-} bb_page;
 
 // Main page request state
 typedef struct {
@@ -94,10 +104,21 @@ void bb_init(bb_page_request *, int options);
 void bb_free(bb_page_request *);
 
 void bb_load_posts(bb_page_request *);
+
 bb_vec * bb_image_list(bb_page_request *, int thumbnail_only);
 bb_vec * tokenize_tags(const char *str, const char * delim);
 long bb_strtol(char *str, long def);
+char *bb_strcpy(const char* str);
 
+/*
+ * bb struct functions
+ */
+int bb_user_init(bb_user *);
+void bb_user_free(bb_user *);
+int bb_post_init(bb_post *);
+void bb_post_free(bb_post *);
+
+// These should probably be in CGI
 int bb_check_accept_encoding(const char *enc);
 unsigned long bb_gzip_compress(const char* input, int inputSize, char* output, int outputSize);
 

@@ -29,6 +29,37 @@
 #include <fcgi_stdio.h>
 #endif
 
+void users(JSON_Object *root_object, bb_page_request* req) {
+    bb_vec * users = db_admin_all_users();
+    bb_users_to_json_admin(root_object, req, users, VIEW);
+    bb_vec_free(users);
+}
+void new_user(JSON_Object *root_object, bb_page_request* req) {
+    bb_users_to_json_admin(root_object, req, NULL, NEW);
+}
+void edit_user(JSON_Object *root_object, bb_page_request* req) {
+    bb_vec * users = db_admin_user((int)bb_strtol(bb_cgi_get_var(req->q_vars, "id"), -1));
+    bb_users_to_json_admin(root_object, req, users, EDIT);
+    bb_vec_free(users);
+}
+void fill_user(bb_page_request *req, bb_user *u) {
+    // ID
+    if (bb_cgi_get_var(req->q_vars, "id") != NULL) {
+        u->id = bb_strtol(bb_cgi_get_var(req->q_vars, "id"), -1);
+    } else {u->id = -1;}
+    // email
+    if (bb_cgi_get_var(req->q_vars, "email") != NULL) {
+        u->email = bb_cgi_get_var(req->q_vars, "email");
+    } else {u->email = NULL;}
+    // name ID
+    if (bb_cgi_get_var(req->q_vars, "name_id") != NULL) {
+        u->name_id = bb_cgi_get_var(req->q_vars, "name_id");
+    } else {u->name_id = NULL;}
+    // name
+    if (bb_cgi_get_var(req->q_vars, "name") != NULL) {
+        u->name = bb_cgi_get_var(req->q_vars, "name");
+    } else {u->name = NULL;}
+}
 
 void posts(JSON_Object *root_object, bb_page_request* req) {
     bb_vec * entries = db_admin_all_posts_preview();
@@ -44,7 +75,7 @@ void new_post(JSON_Object *root_object, bb_page_request* req) {
     bb_posts_to_json_admin(root_object, req, NULL, NEW);
 }
 
-void fill_post(bb_page_request *req, Post *p) {
+void fill_post(bb_page_request *req, bb_post *p) {
     // Post ID
     if (bb_cgi_get_var(req->q_vars, "post_id") != NULL) {
         p->p_id = bb_strtol(bb_cgi_get_var(req->q_vars, "post_id"), -1);
@@ -169,7 +200,9 @@ int main()
     }
     
     // Verify user, otherwise show login form
-    if (sid == NULL || !verify_session(sid)) {
+    bb_user user;
+    bb_user_init(&user);
+    if (sid == NULL || !verify_session(sid, &user)) {
         // Login form
         printf("Content-Type: text/html\r\n\r\n");
         printf("<h3>bittyblog Login</h3><br> <form action=\"%s\" method=\"POST\">\
@@ -177,7 +210,8 @@ int main()
         Password<br><input type=\"password\" name=\"password\" value=\"\"><br><br>\
         <input type=\"submit\" value=\"Submit\">\
         </form>", req.script_name);
-
+        
+        bb_user_free(&user);
         bb_free(&req);
 
         #ifdef _FCGI
@@ -199,8 +233,9 @@ int main()
     // Add REQUEST variables to JSON
     json_object_set_string(root_object, "script_name", req.script_name);
 
-    // Add sid to JSON
+    // Add sid and current user to JSON
     json_object_set_string(root_object, "sid", sid);
+    json_object_set_string(root_object, "user", user.name);
 
     // Add CURRENT YEAR to JSON
     time_t timeval;
@@ -215,8 +250,25 @@ int main()
 
     if (strcmp(GET_ENV_VAR("REQUEST_METHOD"), "POST") == 0)
     {
-        if (strcmp(category, "posts") == 0) {
-            Post p;
+        if (strcmp(category, "users") == 0) {
+            bb_user u;
+            fill_user(&req, &u);
+            int r = 0;
+            if (strcmp(action, "update") == 0) {
+                r = db_admin_update_user(&u);
+            } else if (strcmp(action, "new") == 0) {
+                r = db_admin_new_user(&u, bb_cgi_get_var(req.q_vars, "password"));
+            } else if (strcmp(action, "delete") == 0) {
+                r = db_admin_delete_user(u.id);
+            }
+
+            if (r == 1) {
+                printf("Successful :)<br>");
+            } else {
+                printf("Unsuccessful :)<br>");
+            }
+        } else if (strcmp(category, "posts") == 0) {
+            bb_post p;
             fill_post(&req, &p);
             if (strcmp(action, "update") == 0) {
                 db_update_post(&p);
@@ -300,6 +352,7 @@ int main()
         
         // Cleanup
         json_value_free(root_value);
+        bb_user_free(&user);
         bb_free(&req);
 
         #ifdef _FCGI
@@ -337,6 +390,21 @@ int main()
             media_to_json(root_object, &req);
             json_object_set_string(root_object, "category_media", category);
         }
+        else if (category != NULL && strcmp(category, "users") == 0)
+        {
+            if (action == NULL)
+            {
+                users(root_object, &req);
+            }
+            else if (action != NULL && strcmp(action, "new") == 0)
+            {
+                new_user(root_object, &req);
+            }
+            else if (action != NULL && strcmp(action, "update") == 0)
+            {
+                edit_user(root_object, &req);
+            }
+        }
         else if (bb_cgi_get_var(req.q_vars, "p_id") != NULL)
         { // Load single post to edit
             edit_post(root_object, &req, (int)bb_strtol(bb_cgi_get_var(req.q_vars, "p_id"), -1));
@@ -362,6 +430,7 @@ int main()
 
     json_value_free(root_value);
 
+    bb_user_free(&user);
     bb_free(&req);
 
 #ifdef _FCGI

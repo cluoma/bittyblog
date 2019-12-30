@@ -30,7 +30,8 @@ typedef struct {
 /*
  * Queries for loading posts
  */
-#define N_POSTS_QUERY "SELECT title, a.name_id as page, p.id as id, text, byline, time as time_r, datetime(time, 'unixepoch') AS time, thumbnail, tags \
+#define N_POSTS_QUERY "SELECT title, a.name_id as page, p.id as id, text, byline, time as time_r, datetime(time, 'unixepoch') AS time, thumbnail, tags, \
+COALESCE(u.name_id, 'Unknown') AS user_name_id, COALESCE(u.name, 'Unknown') AS user_name \
 FROM posts p \
 LEFT JOIN (SELECT tr.post_id, group_concat(t.tag, ', ') `tags` \
 	FROM tags t \
@@ -39,6 +40,7 @@ LEFT JOIN (SELECT tr.post_id, group_concat(t.tag, ', ') `tags` \
 ) t2 \
 ON p.id = t2.post_id \
 LEFT JOIN pages a ON p.page_id = a.id \
+LEFT JOIN users u ON p.user_id = u.id \
 WHERE p.visible = 1 \
 AND datetime(time, 'unixepoch') <= datetime('now') \
 AND (p.id IN (SELECT post_id \
@@ -175,7 +177,6 @@ GROUP BY post_id \
 ) t \
 ON p.id = t.post_id \
 ORDER BY time DESC"
-// #define ADMIN_POST_ID_QUERY "SELECT title, page_id, p.id as id, text, byline, datetime(time, 'unixepoch') AS time, thumbnail, visible, tags
 #define ADMIN_POST_ID_QUERY "SELECT title, page_id, p.id as id, text, byline, datetime(time, 'unixepoch') as time, time as time_r, thumbnail, visible, tags \
 FROM posts p \
 LEFT JOIN (SELECT tr.post_id, group_concat(t.tag, ', ') `tags` \
@@ -187,7 +188,7 @@ ON p.id = t.post_id \
 WHERE p.id = @ID"
 
 /*
- * Queries for adding, updating, and removing posts and pages
+ * Queries for adding, updating, and removing posts, pages, and users
  */
 #define ADMIN_NEW_POST "INSERT INTO posts (page_id, title, text, time, byline, thumbnail, visible) VALUES(?, ?, ?, ?, ?, ?, ?)"
 #define ADMIN_ROWID_LAST_POST "SELECT last_insert_rowid() FROM posts"
@@ -199,6 +200,10 @@ WHERE p.id = @ID"
 #define ADMIN_UPDATE_PAGE "UPDATE pages SET name_id = ?, name = ?, style = ? WHERE id = ?"
 #define ADMIN_DELETE_PAGE "DELETE FROM pages WHERE id = ?"
 #define ADMIN_DELETE_PAGE_NULL_POSTS "UPDATE posts SET page_id = NULL WHERE page_id = ?"
+
+#define ADMIN_NEW_USER "INSERT INTO users (email, name_id, name, password) VALUES(?, ?, ?, ?)"
+#define ADMIN_UPDATE_USER "UPDATE users SET email = ?, name_id = ?, name = ? WHERE id = ?"
+#define ADMIN_DELETE_USER "DELETE FROM users WHERE id = ?"
 
 /*
  * Queries for loading pages
@@ -212,10 +217,16 @@ GROUP BY page_id \
 ON p.id = t.page_id"
 
 /*
+ * Queries for loading user data
+ */
+#define LOAD_USERS "SELECT id, email, name_id, name FROM users"
+#define LOAD_USER_ID "SELECT id, email, name_id, name FROM users WHERE id = ?"
+
+/*
  * Queries for checking user login info and setting session ids
  */
 #define CHECK_USER "SELECT 1 FROM users WHERE email = @USER AND password = @PASSWORD"
-#define CHECK_SESSION "SELECT 1 FROM users WHERE session = @SESSION"
+#define CHECK_SESSION "SELECT id, email, name_id, name FROM users WHERE session = @SESSION"
 #define SET_SESSION "UPDATE users SET session = @SESSION WHERE email = @USER AND password = @PASSWORD"
 
 /*
@@ -238,17 +249,23 @@ bb_vec * db_id(int id);
 bb_vec * db_admin_all_posts_preview();
 bb_vec * db_admin_id(int id);
 // Posts
-int db_new_post(Post* p);
-int db_update_post(Post* p);
+int db_new_post(bb_post *p);
+int db_update_post(bb_post *p);
 int db_delete_post(int post_id);
 // Pages
 int db_new_page(bb_page *p);
 int db_update_page(bb_page *p);
 int db_delete_page(int page_id);
+// Users
+bb_vec * db_admin_all_users();
+bb_vec * db_admin_user(int id);
+int db_admin_new_user(bb_user *u, const char* password);
+int db_admin_update_user(bb_user *u);
+int db_admin_delete_user(int id);
 
 // Login session interface
 int verify_user(const char* user, const char* password);
-int verify_session(const char* session);
+int verify_session(const char* session, bb_user *u);
 int set_user_session(const char* user, const char* password, const char* session);
 
 // Modules
@@ -256,10 +273,6 @@ Archives load_archives();
 char *nmonth_to_smonth(int month);
 // Vector implementation that holds results
 void free_archives(Archives *archives);
-
-// Function to NULL out a Post struct
-void Post_init(Post*);
-void Post_free(Post* p);
 
 // Load pages from database
 bb_vec * db_pages();
