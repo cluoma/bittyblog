@@ -208,6 +208,10 @@ void bb_posts_to_json_admin(JSON_Object *root_object, bb_page_request *req, bb_v
             json_object_set_string(json_value_get_object(tmp_post), "thumbnail", p->thumbnail);
             json_object_set_number(json_value_get_object(tmp_post), "visible", p->visible);
 
+            // Add user data
+            json_object_set_string(json_value_get_object(tmp_post), "user_name_id", p->user.name_id);
+            json_object_set_string(json_value_get_object(tmp_post), "user_name", p->user.name);
+
             // Only add text for editting
             // Add text twice, once for text box and once for the preview
             if (action == EDIT)

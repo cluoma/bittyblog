@@ -10,6 +10,21 @@
 #include "bittyblog.h"
 #include "config.h"
 
+#define COPY_SQLITE3_STRING(X, Y, Z) \
+    if (sqlite3_column_type((Y), (Z)) == SQLITE_TEXT) { \
+        (X) = calloc(sqlite3_column_bytes((Y), (Z)) + 1, 1); \
+        memcpy((X), (char *)sqlite3_column_text((Y), (Z)), sqlite3_column_bytes((Y), (Z))); \
+    }
+#define COPY_SQLITE3_INT(X, Y, Z) \
+    if (sqlite3_column_type((Y), (Z)) == SQLITE_INTEGER) { \
+        (X) = sqlite3_column_int((Y), (Z)); \
+    }
+#define COPY_SQLITE3_INT64(X, Y, Z) \
+    if (sqlite3_column_type((Y), (Z)) == SQLITE_INTEGER) { \
+        (X) = sqlite3_column_int((Y), (Z)); \
+    }
+
+
 // String months
 char * ENG_MONTH[] = {
     "",
@@ -50,8 +65,13 @@ sqlite3 *open_database()
  *  Execute query function takes arguments to prepare a statement then
  *  executes the query. A callback must be provided to deal with the results.
  * 
- *  If NULL is supplied as the first argument, then a connection is opened
+ *  If NULL is supplied as the db argument, then a connection is opened
  *  to execute the given query.
+ * 
+ *  If callback is NULL, the query will be executed once using sqlite3_step
+ * 
+ *  If callback is NULL, and data is NOT NULL, first column of first row of results
+ *  will be stored as an int in data.
  * 
  *  Arguments will be bound to the query in order, according to the types string
  *  types is a string consisting of:
@@ -60,8 +80,6 @@ sqlite3 *open_database()
  *  eg. "ssis" will bind arguments as string, string, int, string
  * 
  *  Callbacks MUST return 0, otherwise resources will be freed and NULL returned.
- * 
- *  If no callback is supplied, the query will be executed once using sqlite3_step
  */
 int execute_query(sqlite3* db, int (*callback)(sqlite3_stmt*, void*), void* data,
                   const char* query, const char* types, ...) {
@@ -207,70 +225,38 @@ int load_posts_cb(sqlite3_stmt *results, void* data) {
             return 1;
 
         int col_count = sqlite3_column_count(results);
-        for (int i = 0; i < col_count; i++) {
+        for (int i = 0; i < col_count; i++)
+        {
             const char* col_name = sqlite3_column_name(results, i);
             if (strcmp(col_name, "title") == 0) {
-                const char *title = (char *) sqlite3_column_text(results, i);
-                const int title_len = sqlite3_column_bytes(results, i);
-                post->title = calloc(title_len + 1, 1);
-                memcpy(post->title, title, title_len);
+                COPY_SQLITE3_STRING(post->title, results, i);
             } else if (strcmp(col_name, "id") == 0) {
-                post->p_id = sqlite3_column_int(results, i);
+                COPY_SQLITE3_INT(post->p_id, results, i);
             } else if (strcmp(col_name, "page_id") == 0) {
-                post->page_id = sqlite3_column_int(results, i);
+                COPY_SQLITE3_INT(post->page_id, results, i);
             } else if (strcmp(col_name, "page") == 0) {
-                const char *page_name = (char *) sqlite3_column_text(results, i);
-                const int page_name_len = sqlite3_column_bytes(results, i);
-                post->page = calloc(page_name_len + 1, 1);
-                memcpy(post->page, page_name, page_name_len);
+                COPY_SQLITE3_STRING(post->page, results, i);
             } else if (strcmp(col_name, "text") == 0) {
-                const char *text = (char *) sqlite3_column_text(results, i);
-                const int text_len = sqlite3_column_bytes(results, i);
-                post->text = calloc(text_len + 1, 1);
-                memcpy(post->text, text, text_len);
+                COPY_SQLITE3_STRING(post->text, results, i);
             } else if (strcmp(col_name, "time") == 0) {
-                const char *time = (char *) sqlite3_column_text(results, i);
-                const int time_len = sqlite3_column_bytes(results, i);
-                post->time = calloc(time_len + 1, 1);
-                memcpy(post->time, time, time_len);
+                COPY_SQLITE3_STRING(post->time, results, i);
             } else if (strcmp(col_name, "time_r") == 0) {
-                post->time_r = sqlite3_column_int64(results, i);
+                COPY_SQLITE3_INT64(post->time_r, results, i);
             } else if (strcmp(col_name, "byline") == 0) {
-                const char *byline = (char *) sqlite3_column_text(results, i);
-                const int byline_len = sqlite3_column_bytes(results, i);
-                post->byline = calloc(byline_len + 1, 1);
-                memcpy(post->byline, byline, byline_len);
-            }
-            // else if (strcmp(col_name, "extra") == 0) {
-                
-            // }
-            else if (strcmp(col_name, "thumbnail") == 0) {
-                const char *thumbnail   = (char *) sqlite3_column_text(results, i);
-                const int thumbnail_len = sqlite3_column_bytes(results, i);
-                post->thumbnail = calloc(thumbnail_len + 1, 1);
-                memcpy(post->thumbnail, thumbnail, thumbnail_len);
+                COPY_SQLITE3_STRING(post->byline, results, i);
+            } else if (strcmp(col_name, "thumbnail") == 0) {
+                COPY_SQLITE3_STRING(post->thumbnail, results, i);
             } else if (strcmp(col_name, "visible") == 0) {
-                post->visible = sqlite3_column_int(results, i);
+                COPY_SQLITE3_INT(post->visible, results, i);
             }
-            else if (strcmp(col_name, "tags") == 0) {
-                if (sqlite3_column_type(results, i) != SQLITE_NULL) {
-                    const char *tags = (char *) sqlite3_column_text(results, i);
-                    post->tags = tokenize_tags(tags, ",");
-                }
+            else if (strcmp(col_name, "tags") == 0 &&
+                     sqlite3_column_type(results, i) == SQLITE_TEXT) {
+                const char *tags = (char *) sqlite3_column_text(results, i);
+                post->tags = tokenize_tags(tags, ",");
             } else if (strcmp(col_name, "user_name_id") == 0) {
-                if (sqlite3_column_type(results, i) != SQLITE_NULL) {
-                    const char *user_name_id = (char *) sqlite3_column_text(results, i);
-                    const int user_name_id_len = sqlite3_column_bytes(results, i);
-                    post->user.name_id = calloc(user_name_id_len + 1, 1);
-                    memcpy(post->user.name_id, user_name_id, user_name_id_len);
-                }
+                COPY_SQLITE3_STRING(post->user.name_id, results, i);
             } else if (strcmp(col_name, "user_name") == 0) {
-                if (sqlite3_column_type(results, i) != SQLITE_NULL) {
-                    const char *user_name = (char *) sqlite3_column_text(results, i);
-                    const int user_name_len = sqlite3_column_bytes(results, i);
-                    post->user.name = calloc(user_name_len + 1, 1);
-                    memcpy(post->user.name, user_name, user_name_len);
-                }
+                COPY_SQLITE3_STRING(post->user.name, results, i);
             }
         }
         bb_vec_add(vp, post);
@@ -974,6 +960,8 @@ int verify_session_cb(sqlite3_stmt* st, void* a) {
     bb_user *u = (bb_user *)a;
 
     if(sqlite3_step(st) == SQLITE_ROW) {
+        if (u == NULL) return 0;
+
         u->id = sqlite3_column_int(st, 0);
 
         u->email = calloc(sqlite3_column_bytes(st, 1)+1, 1);

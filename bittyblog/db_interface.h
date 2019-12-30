@@ -63,9 +63,11 @@ AND (id IN (SELECT post_id \
 	INNER JOIN pages p ON t2.page_id = p.id \
 	WHERE name_id = ?) \
 	OR page_id IN (SELECT id FROM pages WHERE name_id = ?))"
-#define POST_ID_QUERY "SELECT title, page_id, a.name_id as page, p.id as id, text, byline, time as time_r, datetime(time, 'unixepoch') AS time, thumbnail, tags \
+#define POST_ID_QUERY "SELECT title, page_id, a.name_id as page, p.id as id, text, byline, time as time_r, datetime(time, 'unixepoch') AS time, thumbnail, tags, \
+COALESCE(u.name_id, 'Unknown') AS user_name_id, COALESCE(u.name, 'Unknown') AS user_name \
 FROM posts p \
 LEFT JOIN pages a ON p.page_id = a.id \
+LEFT JOIN users u ON p.user_id = u.id \
 LEFT JOIN (SELECT tr.post_id, group_concat(t.tag, ', ') `tags` \
 FROM tags t \
 INNER JOIN tags_relate tr on (tr.tag_id = t.id) \
@@ -74,7 +76,8 @@ GROUP BY post_id \
 ON p.id = t.post_id \
 WHERE p.id = @ID AND p.visible = 1 \
 AND datetime(time, 'unixepoch') <= datetime('now')"
-#define SEARCH_QUERY "SELECT title, p.id as id, a.name_id as page, text, byline, time as time_r, datetime(time, 'unixepoch') AS time, thumbnail, tags \
+#define SEARCH_QUERY "SELECT title, p.id as id, a.name_id as page, text, byline, time as time_r, datetime(time, 'unixepoch') AS time, thumbnail, tags, \
+COALESCE(u.name_id, 'Unknown') AS user_name_id, COALESCE(u.name, 'Unknown') AS user_name \
 FROM posts p \
 INNER JOIN (SELECT * FROM pages WHERE name_id = @NAMEID) a ON p.page_id = a.id \
 LEFT JOIN (SELECT tr.post_id, group_concat(t.tag, ', ') `tags` \
@@ -83,11 +86,13 @@ INNER JOIN tags_relate tr on (tr.tag_id = t.id) \
 GROUP BY post_id \
 ) t \
 ON p.id = t.post_id \
+LEFT JOIN users u ON p.user_id = u.id \
 WHERE lower(text) like lower('%' || @KEYWORD || '%') \
 AND p.visible = 1 \
 AND datetime(time, 'unixepoch') <= datetime('now') \
 ORDER BY time DESC"
-#define N_SEARCH_QUERY "SELECT title, p.id as id, a.name_id as page, text, byline, time as time_r, datetime(time, 'unixepoch') AS time, thumbnail, tags \
+#define N_SEARCH_QUERY "SELECT title, p.id as id, a.name_id as page, text, byline, time as time_r, datetime(time, 'unixepoch') AS time, thumbnail, tags, \
+COALESCE(u.name_id, 'Unknown') AS user_name_id, COALESCE(u.name, 'Unknown') AS user_name \
 FROM posts p \
 INNER JOIN (SELECT * FROM pages WHERE name_id = @NAMEID) a ON p.page_id = a.id \
 LEFT JOIN (SELECT tr.post_id, group_concat(t.tag, ', ') `tags` \
@@ -96,6 +101,7 @@ INNER JOIN tags_relate tr on (tr.tag_id = t.id) \
 GROUP BY post_id \
 ) t \
 ON p.id = t.post_id \
+LEFT JOIN users u ON p.user_id = u.id \
 WHERE lower(text) like lower('%' || @KEYWORD || '%') \
 AND p.visible = 1 \
 AND datetime(time, 'unixepoch') <= datetime('now') \
@@ -114,7 +120,8 @@ WHERE lower(text) like lower('%' || @KEYWORD || '%') AND \
 p.visible = 1 \
 AND datetime(time, 'unixepoch') <= datetime('now') \
 ORDER BY time DESC"
-#define N_TAG_QUERY "SELECT title, p.id as id, a.name_id as page, text, byline, time as time_r, datetime(time, 'unixepoch') AS time, thumbnail, tags \
+#define N_TAG_QUERY "SELECT title, p.id as id, a.name_id as page, text, byline, time as time_r, datetime(time, 'unixepoch') AS time, thumbnail, tags, \
+COALESCE(u.name_id, 'Unknown') AS user_name_id, COALESCE(u.name, 'Unknown') AS user_name \
 FROM posts p \
 LEFT JOIN pages a ON p.page_id = a.id \
 INNER JOIN (SELECT DISTINCT tr.post_id \
@@ -129,6 +136,7 @@ INNER JOIN tags_relate tr on (tr.tag_id = t.id) \
 GROUP BY post_id \
 ) t2 \
 ON p.id = t2.post_id \
+LEFT JOIN users u ON p.user_id = u.id \
 WHERE p.visible = 1 \
 AND datetime(time, 'unixepoch') <= datetime('now') \
 ORDER BY time DESC \
@@ -143,7 +151,8 @@ WHERE t.`tag` = ? \
 ON p.id = t.post_id \
 WHERE p.visible = 1 \
 AND datetime(time, 'unixepoch') <= datetime('now')"
-#define MONTH_YEAR_QUERY "SELECT title, p.id as id, a.name_id as page, text, byline, time as time_r, datetime(time, 'unixepoch') AS time, thumbnail, tags \
+#define MONTH_YEAR_QUERY "SELECT title, p.id as id, a.name_id as page, text, byline, time as time_r, datetime(time, 'unixepoch') AS time, thumbnail, tags, \
+COALESCE(u.name_id, 'Unknown') AS user_name_id, COALESCE(u.name, 'Unknown') AS user_name \
 FROM posts p INNER JOIN (SELECT * FROM pages WHERE name_id = @NAMEID) a ON p.page_id = a.id \
 LEFT JOIN (SELECT tr.post_id, group_concat(t.tag, ', ') `tags` \
 FROM tags t \
@@ -151,6 +160,7 @@ INNER JOIN tags_relate tr on (tr.tag_id = t.id) \
 GROUP BY post_id \
 ) t \
 ON p.id = t.post_id \
+LEFT JOIN users u ON p.user_id = u.id \
 WHERE CAST(strftime('%m',time,'unixepoch') AS INT) = @MONTH \
 AND CAST(strftime('%Y',time,'unixepoch') AS INT) = @YEAR \
 AND p.visible = 1 \
@@ -167,7 +177,8 @@ ORDER BY time DESC"
 /*
  * Queries for loading posts, for admin page
  */
-#define ADMIN_ALL_POSTS_QUERY "SELECT a.name as page, p.id as id, title, datetime(time, 'unixepoch') as time, byline, thumbnail, visible, tags \
+#define ADMIN_ALL_POSTS_QUERY "SELECT a.name as page, p.id as id, title, datetime(time, 'unixepoch') as time, byline, thumbnail, visible, tags, \
+COALESCE(u.name_id, 'Unknown') AS user_name_id, COALESCE(u.name, 'Unknown') AS user_name \
 FROM posts p \
 LEFT JOIN pages a ON p.page_id = a.id \
 LEFT JOIN (SELECT tr.post_id, group_concat(t.tag, ', ') `tags` \
@@ -176,8 +187,10 @@ INNER JOIN tags_relate tr on (tr.tag_id = t.id) \
 GROUP BY post_id \
 ) t \
 ON p.id = t.post_id \
+LEFT JOIN users u ON p.user_id = u.id \
 ORDER BY time DESC"
-#define ADMIN_POST_ID_QUERY "SELECT title, page_id, p.id as id, text, byline, datetime(time, 'unixepoch') as time, time as time_r, thumbnail, visible, tags \
+#define ADMIN_POST_ID_QUERY "SELECT title, page_id, p.id as id, text, byline, datetime(time, 'unixepoch') as time, time as time_r, thumbnail, visible, tags, \
+COALESCE(u.name_id, 'Unknown') AS user_name_id, COALESCE(u.name, 'Unknown') AS user_name \
 FROM posts p \
 LEFT JOIN (SELECT tr.post_id, group_concat(t.tag, ', ') `tags` \
 FROM tags t \
@@ -185,6 +198,7 @@ INNER JOIN tags_relate tr on (tr.tag_id = t.id) \
 GROUP BY post_id \
 ) t \
 ON p.id = t.post_id \
+LEFT JOIN users u ON p.user_id = u.id \
 WHERE p.id = @ID"
 
 /*
@@ -234,7 +248,9 @@ ON p.id = t.page_id"
  */
 #define SETTINGS "SELECT name, value FROM settings"
 
-// Posts interface
+/*
+ * Post query functions for viewing
+ */
 int db_count(char* page_name_id);
 int db_search_count(char* page_name_id, char* keyword);
 int db_tag_count(char* tag);
@@ -245,10 +261,12 @@ bb_vec * db_monthyear(char* page_name_id, int month, int year);
 bb_vec * db_nposts(char* page_name_id, int count, int offset);
 bb_vec * db_id(int id);
 
-// Admin posts interface
+/*
+ * Admin DB functions: add, remove, etc.
+ */
+// Posts
 bb_vec * db_admin_all_posts_preview();
 bb_vec * db_admin_id(int id);
-// Posts
 int db_new_post(bb_post *p);
 int db_update_post(bb_post *p);
 int db_delete_post(int post_id);
@@ -265,8 +283,8 @@ int db_admin_delete_user(int id);
 
 // Login session interface
 int verify_user(const char* user, const char* password);
-int verify_session(const char* session, bb_user *u);
-int set_user_session(const char* user, const char* password, const char* session);
+int verify_session(const char* sid, bb_user *u);
+int set_user_session(const char* user, const char* password, const char* sid);
 
 // Modules
 Archives load_archives();

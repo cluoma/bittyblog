@@ -29,6 +29,7 @@
         <input type="hidden" name="a" value="new" />
         <button type="submit">New User</button><br>
     </form>
+    <br>
 
     <table>
         <tr><th>Edit</th><th>ID</th><th>Email</th><th>URL Name ID</th><th>Proper Name</th><th>Delete</th></tr>
@@ -80,7 +81,8 @@
         <input type="hidden" name="c" value="pages" />
         <input type="hidden" name="a" value="new" />
         <button type="submit">New Page</button><br>
-    </form> 
+    </form>
+    <br>
 
     <table>
         <tr><th>Edit</th><th>ID</th><th>ID Name</th><th>Proper Name</th><th>Style</th><th>Tags</th><th>Delete</th></tr>
@@ -149,14 +151,16 @@
         <input type="hidden" name="c" value="posts" />
         <input type="hidden" name="a" value="new" />
         <button type="submit">New Post</button><br>
-    </form> 
+    </form>
+    <br>
 
     <table>
-        <tr><th>Edit</th><th>Published</th><th>Page</th><th>Title</th><th>Byline</th><th>Time</th><th>Delete</th></tr>
+        <tr><th>Edit</th><th>Published</th><th>Page</th><th>Title</th><th>Byline</th><th>Time</th><th>Author</th><th>Delete</th></tr>
         {{#posts}}
         <tr>
             <td><a href="{{script_name}}?sid={{sid}}&p_id={{p_id}}">Edit</a></td>
-            <td>{{#visible}}Published{{/visible}}{{^visible}}<b>Hidden</b>{{/visible}}</td><td>{{page}}</td><td>{{title}}</td><td>{{byline}}</td><td>{{time}}</td>
+            <td>{{#visible}}Published{{/visible}}{{^visible}}<b>Hidden</b>{{/visible}}</td><td>{{page}}</td>
+            <td>{{title}}</td><td>{{byline}}</td><td>{{time}}</td><td>{{user_name}}</td>
             <td>
                 <form action="{{script_name}}?sid={{sid}}&c=posts&a=delete" method="POST">
                 <input type="hidden" name="post_id" value="{{p_id}}" />
@@ -250,6 +254,7 @@
         <input type="file" name="media_upload" accept="image/*">
         <button type="submit">Upload Image</button><br>
     </form>
+    <br>
 
     <table>
         <tr><th>Delete</th><th>Image Name</th><th>Thumbnail</th>
