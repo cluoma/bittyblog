@@ -59,20 +59,32 @@ void fill_user(bb_page_request *req, bb_user *u) {
     if (bb_cgi_get_var(req->q_vars, "name") != NULL) {
         u->name = bb_cgi_get_var(req->q_vars, "name");
     } else {u->name = NULL;}
+    // about
+    if (bb_cgi_get_var(req->q_vars, "about") != NULL) {
+        u->about = bb_cgi_get_var(req->q_vars, "about");
+    } else {u->about = NULL;}
+    // thumbnail
+    if (bb_cgi_get_var(req->q_vars, "thumbnail") != NULL) {
+        u->thumbnail = bb_cgi_get_var(req->q_vars, "thumbnail");
+    } else {u->thumbnail = NULL;}
 }
 
 void posts(JSON_Object *root_object, bb_page_request* req) {
     bb_vec * entries = db_admin_all_posts_preview();
-    bb_posts_to_json_admin(root_object, req, entries, VIEW);
+    bb_posts_to_json_admin(root_object, req, entries, NULL, VIEW);
     bb_vec_free(entries);
 }
 void edit_post(JSON_Object *root_object, bb_page_request* req, int p_id) {
     bb_vec * entries = db_admin_id(p_id);
-    bb_posts_to_json_admin(root_object, req, entries, EDIT);
+    bb_vec * users = db_admin_all_users();
+    bb_posts_to_json_admin(root_object, req, entries, users, EDIT);
+    bb_vec_free(users);
     bb_vec_free(entries);
 }
 void new_post(JSON_Object *root_object, bb_page_request* req) {
-    bb_posts_to_json_admin(root_object, req, NULL, NEW);
+    bb_vec * users = db_admin_all_users();
+    bb_posts_to_json_admin(root_object, req, NULL, users, NEW);
+    bb_vec_free(users);
 }
 
 void fill_post(bb_page_request *req, bb_post *p) {
@@ -112,6 +124,10 @@ void fill_post(bb_page_request *req, bb_post *p) {
     if (bb_cgi_get_var(req->q_vars, "post_tags") != NULL) {
         p->tags = tokenize_tags(bb_cgi_get_var(req->q_vars, "post_tags"), ",");
     } else {p->tags = tokenize_tags("", ",");}
+    // User
+    if (bb_cgi_get_var(req->q_vars, "post_user_id") != NULL) {
+        p->user.id = bb_strtol(bb_cgi_get_var(req->q_vars, "post_user_id"), time(NULL));
+    } else {p->user.id = -1;}
 }
 
 void pages(JSON_Object *root_object, bb_page_request* req) {
@@ -259,7 +275,9 @@ int main()
             } else if (strcmp(action, "new") == 0) {
                 r = db_admin_new_user(&u, bb_cgi_get_var(req.q_vars, "password"));
             } else if (strcmp(action, "delete") == 0) {
-                r = db_admin_delete_user(u.id);
+                if (u.id != 1) { // Cannot delete original user, ever
+                    r = db_admin_delete_user(u.id);
+                }
             }
 
             if (r == 1) {
@@ -329,9 +347,13 @@ int main()
                     char filepath[1024];
                     snprintf(filepath, sizeof(filepath)-1, "%s/%s", req.image_dir, filename);
                     out = fopen(filepath, "wb+");
-                    fwrite(data, 1, data_len, out);
-                    fclose(out);
-                    printf("Successful :)<br>");
+                    if (out != NULL) {
+                        fwrite(data, 1, data_len, out);
+                        fclose(out);
+                        printf("Successful :)<br>");
+                    } else {
+                        printf("Unsuccessful :)<br>");
+                    }
                 } else {
                     printf("Unsuccessful :)<br>");
                 }

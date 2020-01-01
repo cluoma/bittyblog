@@ -253,10 +253,16 @@ int load_posts_cb(sqlite3_stmt *results, void* data) {
                      sqlite3_column_type(results, i) == SQLITE_TEXT) {
                 const char *tags = (char *) sqlite3_column_text(results, i);
                 post->tags = tokenize_tags(tags, ",");
+            } else if (strcmp(col_name, "user_id") == 0) {
+                COPY_SQLITE3_INT(post->user.id, results, i);
             } else if (strcmp(col_name, "user_name_id") == 0) {
                 COPY_SQLITE3_STRING(post->user.name_id, results, i);
             } else if (strcmp(col_name, "user_name") == 0) {
                 COPY_SQLITE3_STRING(post->user.name, results, i);
+            } else if (strcmp(col_name, "user_about") == 0) {
+                COPY_SQLITE3_STRING(post->user.about, results, i);
+            } else if (strcmp(col_name, "user_thumbnail") == 0) {
+                COPY_SQLITE3_STRING(post->user.thumbnail, results, i);
             }
         }
         bb_vec_add(vp, post);
@@ -276,6 +282,15 @@ bb_vec * db_ntag(char* tag, int count, int offset)
     execute_query(NULL, load_posts_cb, all_posts,
                 N_TAG_QUERY,
                 "sii", tag, count, offset);
+    return all_posts;
+}
+bb_vec * db_nauthor(char* name_id, int count, int offset)
+{
+    bb_vec * all_posts = malloc(sizeof(bb_vec));
+    bb_vec_init(all_posts, vec_post_free);
+    execute_query(NULL, load_posts_cb, all_posts,
+                N_AUTHOR_QUERY,
+                "sii", name_id, count, offset);
     return all_posts;
 }
 bb_vec * db_search(char* page_name_id, char *keyword)
@@ -373,6 +388,19 @@ int db_tag_count(char* tag) {
     
     return 0;
 }
+int db_author_count(char* name_id) {
+    int success = 0;
+    int count = 0;
+
+    success = execute_query(NULL, db_count_cb, &count,
+        N_AUTHOR_COUNT_QUERY,
+        "s", name_id);
+
+    if (success && count)
+        return count;
+    
+    return 0;
+}
 
 /*
  * Get a list of pages from the database
@@ -384,19 +412,10 @@ int db_pages_cb(sqlite3_stmt* st, void* a) {
         // Realloc memory for a new post
         bb_page *page = malloc(sizeof(bb_page));
 
-        page->id = sqlite3_column_int(st, 0);
-
-        page->id_name = calloc(sqlite3_column_bytes(st, 1)+1, 1);
-        memcpy(page->id_name,
-                sqlite3_column_text(st, 1),
-                sqlite3_column_bytes(st, 1));
-
-        page->name = calloc(sqlite3_column_bytes(st, 2)+1, 1);
-        memcpy(page->name,
-                sqlite3_column_text(st, 2),
-                sqlite3_column_bytes(st, 2));
-
-        page->style = sqlite3_column_int(st, 3);
+        COPY_SQLITE3_INT(page->id, st, 0);
+        COPY_SQLITE3_STRING(page->id_name, st, 1);
+        COPY_SQLITE3_STRING(page->name, st, 2);
+        COPY_SQLITE3_INT(page->style, st, 3);
 
         if (sqlite3_column_type(st, 4) != SQLITE_NULL) {
             const char *tags = (char *) sqlite3_column_text(st, 4);
@@ -435,23 +454,14 @@ int db_users_cb(sqlite3_stmt* st, void* a) {
     {
         // Realloc memory for a new post
         bb_user *user = malloc(sizeof(bb_user));
+        bb_user_init(user);
 
-        user->id = sqlite3_column_int(st, 0);
-
-        user->email = calloc(sqlite3_column_bytes(st, 1)+1, 1);
-        memcpy(user->email,
-                sqlite3_column_text(st, 1),
-                sqlite3_column_bytes(st, 1));
-        
-        user->name_id = calloc(sqlite3_column_bytes(st, 2)+1, 1);
-        memcpy(user->name_id,
-                sqlite3_column_text(st, 2),
-                sqlite3_column_bytes(st, 2));
-        
-        user->name = calloc(sqlite3_column_bytes(st, 3)+1, 1);
-        memcpy(user->name,
-                sqlite3_column_text(st, 3),
-                sqlite3_column_bytes(st, 3));
+        COPY_SQLITE3_INT(user->id, st, 0);
+        COPY_SQLITE3_STRING(user->email, st, 1);
+        COPY_SQLITE3_STRING(user->name_id, st, 2);
+        COPY_SQLITE3_STRING(user->name, st, 3);
+        COPY_SQLITE3_STRING(user->about, st, 4);
+        COPY_SQLITE3_STRING(user->thumbnail, st, 5);
 
         bb_vec_add(users, user);
     }
@@ -459,9 +469,7 @@ int db_users_cb(sqlite3_stmt* st, void* a) {
 }
 void db_users_free_cb(void *d) {
     bb_user *user = (bb_user *)d;
-    free(user->email);
-    free(user->name_id);
-    free(user->name);
+    bb_user_free(user);
     free(user);
 }
 bb_vec * db_admin_all_users()
@@ -479,6 +487,15 @@ bb_vec * db_admin_user(int id)
     bb_vec_init(users, db_users_free_cb);
     
     execute_query(NULL, db_users_cb, users, LOAD_USER_ID, "i", id);
+    
+    return users;
+}
+bb_vec * db_user_from_name_id(char *name_id)
+{
+    bb_vec *users = malloc(sizeof(bb_vec));
+    bb_vec_init(users, db_users_free_cb);
+    
+    execute_query(NULL, db_users_cb, users, USER_INFO_FROM_NAME_ID, "s", name_id);
     
     return users;
 }
@@ -622,8 +639,8 @@ int db_new_post(bb_post *p) {
     }
 
     // Add post to database
-    rc = execute_query(db, NULL, NULL, ADMIN_NEW_POST, "ississi",
-                p->page_id, p->title, p->text, p->time_r, p->byline, p->thumbnail, p->visible);
+    rc = execute_query(db, NULL, NULL, ADMIN_NEW_POST, "iississi",
+                p->page_id, p->user.id, p->title, p->text, p->time_r, p->byline, p->thumbnail, p->visible);
     if (!rc) {
         fprintf(stderr, "Failed to add post to database\n");
         sqlite3_close(db);
@@ -660,8 +677,8 @@ int db_update_post(bb_post *p) {
     }
 
     // Update post to database
-    rc = execute_query(db, NULL, NULL, ADMIN_UPDATE_POST, "isisssii",
-                p->page_id, p->title, p->time_r, p->text, p->byline, p->thumbnail, p->visible, p->p_id);
+    rc = execute_query(db, NULL, NULL, ADMIN_UPDATE_POST, "iisisssii",
+                p->page_id, p->user.id, p->title, p->time_r, p->text, p->byline, p->thumbnail, p->visible, p->p_id);
     if (!rc) {
         fprintf(stderr, "Failed to update post to database\n");
         sqlite3_close(db);
@@ -826,8 +843,8 @@ int db_admin_new_user(bb_user *u, const char *password) {
     }
 
     // Add post to database
-    rc = execute_query(db, NULL, NULL, ADMIN_NEW_USER, "ssss",
-                u->email, u->name_id, u->name, password);
+    rc = execute_query(db, NULL, NULL, ADMIN_NEW_USER, "ssssss",
+                u->email, password, u->name_id, u->name, u->about, u->thumbnail);
     if (!rc) {
         fprintf(stderr, "Failed to add user to database\n");
         sqlite3_close(db);
@@ -850,8 +867,8 @@ int db_admin_update_user(bb_user *u) {
     }
 
     // Add post to database
-    rc = execute_query(db, NULL, NULL, ADMIN_UPDATE_USER, "sssi",
-                u->email, u->name_id, u->name, u->id);
+    rc = execute_query(db, NULL, NULL, ADMIN_UPDATE_USER, "sssssi",
+                u->email, u->name_id, u->name, u->about, u->thumbnail, u->id);
     if (!rc) {
         fprintf(stderr, "Failed to update user to database\n");
         sqlite3_close(db);
@@ -877,6 +894,14 @@ int db_admin_delete_user(int id) {
     rc = execute_query(db, NULL, NULL, ADMIN_DELETE_USER, "i", id);
     if (!rc) {
         fprintf(stderr, "Failed to update user to database\n");
+        sqlite3_close(db);
+        return 0;
+    }
+
+    // NULL out user_ids in Posts
+    rc = execute_query(db, NULL, NULL, ADMIN_DELETE_USER_NULL_POSTS, "i", id);
+    if (!rc) {
+        fprintf(stderr, "Failed to NULLify user_ids in posts to database\n");
         sqlite3_close(db);
         return 0;
     }

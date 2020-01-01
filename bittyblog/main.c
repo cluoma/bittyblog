@@ -75,6 +75,9 @@ int main(int argc, char **argv, char **envp)
         bb_load_posts(&req);
         bb_posts_to_json(root_object, &req, 1);
 
+        // Special info box
+        bb_special_info_box_to_json(root_object, &req);
+
         // Archives
         Archives archives;
         archives = load_archives();

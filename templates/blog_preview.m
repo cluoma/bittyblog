@@ -9,6 +9,7 @@
 <div class="row">
     <div class="col-sm-8 blog-main">
 
+        {{#special_info_box}}
         {{#search}}
         <!-- Search notification box -->
         <div class="panel panel-default" style="border-color: #428bca">
@@ -19,7 +20,7 @@
         </div>
         {{/search}}
         {{#tag}}
-        <!-- Search notification box -->
+        <!-- Tag notification box -->
         <div class="panel panel-default" style="border-color: #428bca">
         <div class="panel-heading" style="background-color: #428bca; color: #fff">Tag</div>
         <div class="panel-body">
@@ -27,20 +28,30 @@
         </div>
         </div>
         {{/tag}}
+        {{#author}}
+        <!-- Author notification box -->
+        <div class="panel panel-default" style="border-color: #428bca">
+        <div class="panel-heading" style="background-color: #428bca; color: #fff">Author</div>
+        <div class="panel-body">
+        <p>Showing blog posts written by: <b>{{user_name}}</b></p>
+        </div>
+        </div>
+        {{/author}}
+        {{/special_info_box}}
 
         {{#posts}}
         <div class="blog-post-preview-card">
             {{#rewrite}}
             <a href="/post/{{p_id}}"><img class="blog-post-preview-img" src="/images/{{thumbnail}}"></a>
             <a href="/post/{{p_id}}"><h2 class="blog-post-preview-title">{{title}}</h2></a>
-            <p class="blog-post-meta">{{time}} - by {{user_name}}</p>
+            <p class="blog-post-meta">By <a href="/author/{{user_name_id}}">{{user_name}}</a>, {{time}}</p>
             <p>{{byline}}</p>
             <p style="clear: both; margin: 0px;"><b>Tags:</b> {{#tags}}<a class="blog-post-tag" href="/tag/{{.}}">{{.}}</a> {{/tags}}</p>
             {{/rewrite}}
             {{^rewrite}}
             <a href="{{script_name}}?page={{page_name}}&id={{p_id}}"><img class="blog-post-preview-img" src="/images/{{thumbnail}}"></a>
             <a href="{{script_name}}?page={{page_name}}&id={{p_id}}"><h2 class="blog-post-preview-title">{{title}}</h2></a>
-            <p class="blog-post-meta">{{time}} - by {{user_name}}</p>
+            <p class="blog-post-meta">By <a href="{{script_name}}?author={{user_name_id}}">{{user_name}}</a>, {{time}}</p>
             <p>{{byline}}</p>
             <p style="clear: both; margin: 0px;"><b>Tags:</b> {{#tags}}<a class="blog-post-tag" href="{{script_name}}?tag={{.}}">{{.}}</a> {{/tags}}</p>
             {{/rewrite}}

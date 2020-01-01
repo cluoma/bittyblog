@@ -4,7 +4,7 @@ sqlite3 bittyblog.db "CREATE TABLE \`pages\` (\`id\` INTEGER NOT NULL PRIMARY KE
 sqlite3 bittyblog.db "CREATE TABLE \`posts\` (\`id\` INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE, \`page_id\` INTEGER, \`user_id\` INTEGER, \`title\` TEXT, \`text\` TEXT, \`time\` INTEGER NOT NULL, \`extra\` TEXT, \`byline\` TEXT, \`thumbnail\` TEXT, \`visible\` INTEGER, FOREIGN KEY(\`page_id\`) REFERENCES pages ( id ));"
 sqlite3 bittyblog.db "CREATE TABLE \`settings\` (\`name\` TEXT NOT NULL UNIQUE, \`value\` TEXT, PRIMARY KEY(name));"
 #sqlite3 bittyblog.db "CREATE TABLE \`users\` (\`email\` TEXT NOT NULL UNIQUE, \`password\` TEXT NOT NULL, \`session\` TEXT UNIQUE, PRIMARY KEY(email));"
-sqlite3 bittyblog.db "CREATE TABLE \`users\` (\`id\` INTEGER NOT NULL PRIMARY KEY UNIQUE, \`email\` TEXT NOT NULL UNIQUE, \`password\` TEXT NOT NULL, \`name_id\` TEXT NOT NULL UNIQUE, \`name\` TEXT, \`session\` TEXT UNIQUE);"
+sqlite3 bittyblog.db "CREATE TABLE \`users\` (\`id\` INTEGER NOT NULL PRIMARY KEY UNIQUE, \`email\` TEXT NOT NULL UNIQUE, \`password\` TEXT NOT NULL, \`name_id\` TEXT NOT NULL UNIQUE, \`name\` TEXT, \`about\` TEXT, \`thumbnail\` TEXT, \`session\` TEXT UNIQUE);"
 sqlite3 bittyblog.db "CREATE TABLE \`tags\` (\`id\` INTEGER NOT NULL PRIMARY KEY UNIQUE,\`tag\` TEXT NOT NULL UNIQUE);"
 sqlite3 bittyblog.db "CREATE TABLE \`tags_relate\` (\`tag_id\` INTEGER NOT NULL, \`post_id\` INTEGER NOT NULL, PRIMARY KEY(tag_id,post_id));"
 sqlite3 bittyblog.db "CREATE TABLE \`tags_pages_relate\` (\`tag_id\` INTEGER NOT NULL, \`page_id\` INTEGER NOT NULL, PRIMARY KEY(tag_id,page_id));"

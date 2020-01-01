@@ -32,11 +32,12 @@
         <div class="blog-post">
         {{#rewrite}}
         <a href="/post/{{p_id}}"><h2 class="blog-post-title">{{title}}</h2></a>
+        <p class="blog-post-meta">By <a href="/author/{{user_name_id}}">{{user_name}}</a>, {{time}}</p>
         {{/rewrite}}
         {{^rewrite}}
         <a href="{{script_name}}?page={{page_name}}&id={{p_id}}"><h2 class="blog-post-title">{{title}}</h2></a>
+        <p class="blog-post-meta">By <a href="{{script_name}}?author={{user_name_id}}">{{user_name}}</a>, {{time}}</p>
         {{/rewrite}}
-        <p class="blog-post-meta">{{time}}</p>
         <p>{{&text}}</p>
         <hr>
         {{#rewrite}}
@@ -47,6 +48,7 @@
         {{/rewrite}}
         <hr>
         </div>
+        <h2 >{{user_name}}: {{user_about}}</h2>
         {{/posts}}
         {{^posts}}
         <h2 class="blog-post-title" style="text-align: center;">No Posts Found</h2>

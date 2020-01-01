@@ -46,6 +46,12 @@ void handle_rewrite(bb_page_request *req)
             bb_cgi_add_var(&(req->q_vars), "tag", uri1, strlen(uri1)+1);
             bb_cgi_add_var(&(req->q_vars), "start", start, strlen(start)+1);
         }
+        else if (strcmp(uri0, "author") == 0)
+        {
+            bb_cgi_remove_all_var(&(req->q_vars));
+            bb_cgi_add_var(&(req->q_vars), "author", uri1, strlen(uri1)+1);
+            bb_cgi_add_var(&(req->q_vars), "start", start, strlen(start)+1);
+        }
         else if (strcmp(uri0, "archive") == 0)
         {
             bb_cgi_remove_all_var(&(req->q_vars));
@@ -163,6 +169,7 @@ void bb_load_posts(bb_page_request *req) {
 
     char *search    = bb_cgi_get_var( req->q_vars, "search" );
     char *tag       = bb_cgi_get_var( req->q_vars, "tag" );
+    char *author    = bb_cgi_get_var( req->q_vars, "author" );
     char *id        = bb_cgi_get_var( req->q_vars, "id" );
     char *start     = bb_cgi_get_var( req->q_vars, "start" );
     char *month     = bb_cgi_get_var( req->q_vars, "month" );
@@ -172,13 +179,18 @@ void bb_load_posts(bb_page_request *req) {
     {
         if (search != NULL)
         {
-            entries = db_nsearch(req->page->id_name, search, POSTS_PER_PAGE, (start == NULL ? 0 : (int)bb_strtol(start, 0)));
+            entries = db_nsearch(req->page->id_name, search, POSTS_PER_PAGE, (int)bb_strtol(start, 0));
             req->total_post_count = db_search_count(req->page->id_name, search);
         }
         else if (tag != NULL)
         {
-            entries = db_ntag(tag, POSTS_PER_PAGE, (start == NULL ? 0 : (int)bb_strtol(start, 0)));
+            entries = db_ntag(tag, POSTS_PER_PAGE, (int)bb_strtol(start, 0));
             req->total_post_count = db_tag_count(tag);
+        }
+        else if (author != NULL)
+        {
+            entries = db_nauthor(author, POSTS_PER_PAGE, (int)bb_strtol(start, 0));
+            req->total_post_count = db_author_count(author);
         }
         else if (start != NULL)
         {
@@ -207,18 +219,22 @@ void bb_load_posts(bb_page_request *req) {
  */
 int bb_user_init(bb_user *u)
 {
-    u->id       = -1;
-    u->email    = NULL;
-    u->name_id  = NULL;
-    u->name     = NULL;
+    u->id           = -1;
+    u->email        = NULL;
+    u->name_id      = NULL;
+    u->name         = NULL;
+    u->about        = NULL;
+    u->thumbnail    = NULL;
 
     return 0;
 }
 void bb_user_free(bb_user *u)
 {
-    if(u->email != NULL)    free(u->email);
-    if(u->name_id != NULL)  free(u->name_id);
-    if(u->name != NULL)     free(u->name);
+    if(u->email != NULL)        free(u->email);
+    if(u->name_id != NULL)      free(u->name_id);
+    if(u->name != NULL)         free(u->name);
+    if(u->about != NULL)        free(u->about);
+    if(u->thumbnail != NULL)    free(u->thumbnail);
 }
 
 /*

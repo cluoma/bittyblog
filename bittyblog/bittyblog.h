@@ -32,6 +32,8 @@ typedef struct {
     char* email;
     char* name_id;
     char* name;
+    char* about;
+    char* thumbnail;
 } bb_user;
 
 // Post struct

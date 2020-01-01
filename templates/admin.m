@@ -51,9 +51,18 @@
     {{#category_new_users}}
     <form role="form" method="post" action="{{script_name}}?sid={{sid}}&c=users&a=new">
         <label for="email">Email:</label><br><textarea name="email" id="email" rows="1" cols="100"></textarea><br>
+        <label for="password">Password:</label><br><textarea name="password" id="password" rows="1" cols="100"></textarea><br>
         <label for="name_id">URL Name ID:</label><br><textarea name="name_id" id="name_id" rows="1" cols="100"></textarea><br>
         <label for="name">Name:</label><br><textarea name="name" id="name" rows="1" cols="100"></textarea><br>
-        <label for="password">Password:</label><br><textarea name="password" id="password" rows="1" cols="100"></textarea><br>
+        <label for="about">About:</label><br><textarea name="about" id="about" rows="1" cols="100"></textarea><br>
+        <div>
+        <label for="thumbnail">Thumbnail: </label>
+        <select name="thumbnail" id="thumbnail">
+            {{#images}}
+            <option value="{{filename}}" {{#selected}}selected{{/selected}}>{{filename}}</option>
+            {{/images}}
+        </select>
+        </div>
         <button type="submit">Submit</button>
     </form>
     {{/category_new_users}}
@@ -65,6 +74,15 @@
         <label for="email">Email:</label><br><textarea name="email" id="email" rows="1" cols="100">{{email}}</textarea><br>
         <label for="name_id">URL Name ID:</label><br><textarea name="name_id" id="name_id" rows="1" cols="100">{{name_id}}</textarea><br>
         <label for="name">Name:</label><br><textarea name="name" id="name" rows="1" cols="100">{{name}}</textarea><br>
+        <label for="about">About:</label><br><textarea name="about" id="about" rows="1" cols="100">{{about}}</textarea><br>
+        <div>
+        <label for="thumbnail">Thumbnail: </label>
+        <select name="thumbnail" id="thumbnail">
+            {{#images}}
+            <option value="{{filename}}" {{#selected}}selected{{/selected}}>{{filename}}</option>
+            {{/images}}
+        </select>
+        </div>
         <input id="id" name="id" type="hidden" value="{{id}}">
         <button type="submit">Submit</button>
     </form>
@@ -193,6 +211,14 @@
             {{/pages}}
         </select>
         </div>
+        <div>
+        <label for="post_user_id">Author: </label>
+        <select name="post_user_id" id="post_user_id">
+            {{#users}}
+            <option value="{{id}}" {{#selected}}selected{{/selected}}>{{name}}</option>
+            {{/users}}
+        </select>
+        </div>
         <label for="post_title">Title:</label><br><textarea name="post_title" id="post_title" rows="1" cols="100">{{title}}</textarea><br>
         <label for="post_byline">Byline:</label><br><textarea name="post_byline" id="post_byline" rows="1" cols="100">{{byline}}</textarea><br>
         <label for="post_time">Time:</label><br><input type="number" min="0" name="post_time" id="post_time" rows="1" value="{{time_r}}"><br>
@@ -233,6 +259,14 @@
             {{#pages}}
             <option value="{{id}}" {{#selected}}selected{{/selected}}>{{name}}</option>
             {{/pages}}
+        </select>
+        </div>
+        <div>
+        <label for="post_user_id">Author: </label>
+        <select name="post_user_id" id="post_user_id">
+            {{#users}}
+            <option value="{{id}}" {{#selected}}selected{{/selected}}>{{name}}</option>
+            {{/users}}
         </select>
         </div>
         <label for="post_title">Title:</label><br><textarea name="post_title" id="post_title" rows="1" cols="100"></textarea><br>
