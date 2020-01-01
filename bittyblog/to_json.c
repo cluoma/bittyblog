@@ -161,7 +161,7 @@ void bb_special_info_box_to_json(JSON_Object *root_object, bb_page_request *req)
 
     char *author = bb_cgi_get_var(req->q_vars, "author");
     if (author) {
-        bb_vec *user_v = db_user_from_name_id(author);
+        bb_vec *user_v = db_author(author);
         if (bb_vec_count(user_v) > 0) {
             bb_user *user = (bb_user *)bb_vec_get(user_v, 0);
             json_object_set_boolean(special_info_box_object, "author", 1);

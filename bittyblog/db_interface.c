@@ -490,7 +490,7 @@ bb_vec * db_admin_user(int id)
     
     return users;
 }
-bb_vec * db_user_from_name_id(char *name_id)
+bb_vec * db_author(char *name_id)
 {
     bb_vec *users = malloc(sizeof(bb_vec));
     bb_vec_init(users, db_users_free_cb);

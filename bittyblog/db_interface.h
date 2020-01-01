@@ -292,7 +292,7 @@ bb_vec * db_id(int id);
 /*
  * Author query functions for viewing
  */
-bb_user * db_author(char* name_id);
+bb_vec * db_author(char* name_id);
 
 /*
  * Admin DB functions: add, remove, etc.
