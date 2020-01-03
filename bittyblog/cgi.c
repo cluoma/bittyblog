@@ -157,6 +157,8 @@ long bb_cgi_get_var_len(query_var *qv, const char* key)
 
 int bb_cgi_add_var(query_var **qv, const char* key, const char* val, long val_len) {
     query_var *new_var = malloc(sizeof(query_var));
+    if (new_var == NULL)
+        return 1;
 
     new_var->key = calloc(1, strlen(key)+1);
     if (new_var->key != NULL) {

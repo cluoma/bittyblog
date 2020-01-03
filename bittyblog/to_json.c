@@ -263,7 +263,6 @@ void bb_posts_to_json_admin(JSON_Object *root_object, bb_page_request *req, bb_v
                     JSON_Array *images = json_value_get_array(json_value_init_array());
                     for (int i = 0; i < image_list->count; i++)
                     {
-                        fprintf(stderr, "%s :: %s\n", (char *)bb_vec_get(image_list, i), p->thumbnail);
                         JSON_Value *tmp = json_value_init_object();
                         json_object_set_string(json_value_get_object(tmp), "filename", (char *)bb_vec_get(image_list, i));
                         if (p->thumbnail != NULL && strcmp((char *)bb_vec_get(image_list, i), p->thumbnail) == 0) {
