@@ -93,7 +93,7 @@ int main(int argc, char **argv, char **envp)
     }
 
     // If we have an id, always use FULL BLOG POST style
-    if( req.page != NULL && bb_cgi_get_var(req.q_vars, "id") ) req.page->style = BLOG_FULL_POST;
+    if( req.page != NULL && bb_cgi_get_var(req.q_vars, "id") ) req.page->style = BLOG_SINGLE_POST;
     // If we have rss, use the rss theme
     if( req.page != NULL && bb_cgi_get_var(req.q_vars, "rss") ) req.page->style = RSS;
 
