@@ -10,6 +10,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+
+#define DEFINE_TEMPLATES
 #include "main.h"
 #include "cgi.h"
 #include "db_interface.h"
@@ -17,10 +19,12 @@
 #include "vec.h"
 #include "bittyblog.h"
 #include "to_json.h"
+
 #include <parson.h>
 #include <libMagnum.h>
 #include <d_string.h>
 #include <file.h>
+
 
 #ifdef _FCGI
 #include "cachemap.h"
@@ -96,34 +100,44 @@ int main(int argc, char **argv, char **envp)
     // Load the currect template file, based on page style
     DString *template;
     int page_style = req.page != NULL ? req.page->style : MISSING;
-    switch( page_style )
+    char dir_base[1024];
+    if (page_style >= 0 && page_style < STYLE_LAST)
     {
-        char dir_base[1024];
-        case BLOG_FULL_POST:
-            snprintf(dir_base, 1023, "%s/blog.m", TEMPLATE_PATH);
-            template = scan_file(dir_base);
-            break;
-        case BLOG_SMALL_POST:
-            snprintf(dir_base, 1023, "%s/blog_preview.m", TEMPLATE_PATH);
-            template = scan_file(dir_base);
-            break;
-        case CONTACT:
-            snprintf(dir_base, 1023, "%s/contact.m", TEMPLATE_PATH);
-            template = scan_file(dir_base);
-            break;
-        case RSS:
-            snprintf(dir_base, 1023, "%s/rss.m", TEMPLATE_PATH);
-            template = scan_file(dir_base);
-            break;
-        case MISSING:
-            snprintf(dir_base, 1023, "%s/404.m", TEMPLATE_PATH);
-            template = scan_file(dir_base);
-            break;
-        default:
-            snprintf(dir_base, 1023, "%s/blog.m", TEMPLATE_PATH);
-            template = scan_file(dir_base);
-            break;
+        snprintf(dir_base, 1023, "%s/%s", TEMPLATE_PATH, style_template[page_style]);
+        template = scan_file(dir_base);
     }
+    else {
+        snprintf(dir_base, 1023, "%s/%s", TEMPLATE_PATH, style_template[0]);
+        template = scan_file(dir_base);
+    }
+    // switch( page_style )
+    // {
+    //     char dir_base[1024];
+    //     case BLOG_FULL_POST:
+    //         snprintf(dir_base, 1023, "%s/%s", TEMPLATE_PATH, style_template[BLOG_FULL_POST]);
+    //         template = scan_file(dir_base);
+    //         break;
+    //     case BLOG_SMALL_POST:
+    //         snprintf(dir_base, 1023, "%s/blog_preview.m", TEMPLATE_PATH);
+    //         template = scan_file(dir_base);
+    //         break;
+    //     case CONTACT:
+    //         snprintf(dir_base, 1023, "%s/contact.m", TEMPLATE_PATH);
+    //         template = scan_file(dir_base);
+    //         break;
+    //     case RSS:
+    //         snprintf(dir_base, 1023, "%s/rss.m", TEMPLATE_PATH);
+    //         template = scan_file(dir_base);
+    //         break;
+    //     case MISSING:
+    //         snprintf(dir_base, 1023, "%s/404.m", TEMPLATE_PATH);
+    //         template = scan_file(dir_base);
+    //         break;
+    //     default:
+    //         snprintf(dir_base, 1023, "%s/blog.m", TEMPLATE_PATH);
+    //         template = scan_file(dir_base);
+    //         break;
+    // }
 
     // Response content
     DString *out = d_string_new("");

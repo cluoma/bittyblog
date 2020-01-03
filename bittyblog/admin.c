@@ -13,17 +13,20 @@
 #include <math.h>
 #include <time.h>
 #include <errno.h>
-#include "main.h"
+
+#define DEFINE_TEMPLATES
 #include "cgi.h"
 #include "db_interface.h"
 #include "config.h"
 #include "vec.h"
 #include "to_json.h"
 #include "bittyblog.h"
+
 #include <libMagnum.h>
 #include <parson.h>
 #include <d_string.h>
 #include <file.h>
+
 
 #ifdef _FCGI
 #include <fcgi_stdio.h>

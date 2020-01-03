@@ -9,6 +9,7 @@
 #include <time.h>
 #include <errno.h>
 #include <parson.h>
+
 #include "bittyblog.h"
 #include "to_json.h"
 #include "db_interface.h"
@@ -390,6 +391,7 @@ void bb_pages_to_json_admin(JSON_Object *root_object, bb_page_request *req, int 
             char style[25];
             sprintf(style, "%d", ((bb_page *)bb_vec_get(req->pages, i))->style);
             json_object_set_string(json_value_get_object(tmp), "style", style);
+            json_object_set_string(json_value_get_object(tmp), "style_name", style_template[((bb_page *)bb_vec_get(req->pages, i))->style]);
             // Add an array of tags to the page
             bb_vec *tags = ((bb_page *)bb_vec_get(req->pages, i))->tags;
             if (tags != NULL)
@@ -412,6 +414,7 @@ void bb_pages_to_json_admin(JSON_Object *root_object, bb_page_request *req, int 
                     char style[25];
                     sprintf(style, "%d", j);
                     json_object_set_string(json_value_get_object(tmp2), "style", style);
+                    json_object_set_string(json_value_get_object(tmp2), "style_name", style_template[j]);
                     if (((bb_page *)bb_vec_get(req->pages, i))->style == j)
                     {
                         json_object_set_boolean(json_value_get_object(tmp2), "selected", 1);
@@ -435,6 +438,7 @@ void bb_pages_to_json_admin(JSON_Object *root_object, bb_page_request *req, int 
             char style[25];
             sprintf(style, "%d", j);
             json_object_set_string(json_value_get_object(tmp2), "style", style);
+            json_object_set_string(json_value_get_object(tmp2), "style_name", style_template[j]);
             json_array_append_value(json_styles, tmp2);
         }
         json_object_set_value(root_object, "styles", json_array_get_wrapping_value(json_styles));

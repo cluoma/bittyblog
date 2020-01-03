@@ -107,7 +107,7 @@
         {{#pages}}
         <tr>
             <td><a href="{{script_name}}?sid={{sid}}&page_id={{id}}">Edit</a></td>
-            <td>{{id}}</td><td>{{id_name}}</td><td>{{name}}</td><td>{{style}}</td><td>{{#tags}}{{.}}, {{/tags}}</td>
+            <td>{{id}}</td><td>{{id_name}}</td><td>{{name}}</td><td>{{style_name}}</td><td>{{#tags}}{{.}}, {{/tags}}</td>
             <td>
                 <form action="{{script_name}}?sid={{sid}}&c=pages&a=delete" method="POST">
                 <input type="hidden" name="page_id" value="{{id}}" />
@@ -128,7 +128,7 @@
         <label for="page_style">Style</label>
         <select name="page_style" id="page_style">
             {{#styles}}
-            <option value="{{style}}" {{#selected}}selected{{/selected}}>{{style}}</option>
+            <option value="{{style}}" {{#selected}}selected{{/selected}}>{{style_name}}</option>
             {{/styles}}
         </select>
         </div>
@@ -149,7 +149,7 @@
         <label for="page_style">Style</label>
         <select name="page_style" id="page_style">
             {{#styles}}
-            <option value="{{style}}" {{#selected}}selected{{/selected}}>{{style}}</option>
+            <option value="{{style}}" {{#selected}}selected{{/selected}}>{{style_name}}</option>
             {{/styles}}
         </select>
         </div>
