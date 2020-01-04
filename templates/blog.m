@@ -31,7 +31,6 @@
         {{/rewrite}}
         <hr>
         </div>
-        <h2 >{{user_name}}: {{user_about}}</h2>
         {{/posts}}
         {{^posts}}
         <h2 class="blog-post-title" style="text-align: center;">No Posts Found</h2>

@@ -62,24 +62,6 @@ typedef struct {
     bb_vec *tags;
 } bb_page;
 
-#define STYLES  C(BLOG_FULL_POST, "blog.m")             \
-                C(BLOG_SMALL_POST, "blog_preview.m")    \
-                C(BLOG_SINGLE_POST, "blog_single.m")    \
-                C(CONTACT, "contact.m")                 \
-                C(RSS, "rss.m")                         \
-                C(MISSING, "404.m")
-#define C(k, v) k,
-enum bb_page_styles { STYLES STYLE_LAST };
-#undef C
-#ifdef DEFINE_TEMPLATES
-#define C(k, v) [k] = v,    
-const char * const style_template[] = { STYLES };
-#undef C
-#else
-extern const char * const style_template[];
-#endif
-
-
 // Main page request state
 typedef struct {
     // CGI Vars
