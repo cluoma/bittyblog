@@ -101,6 +101,10 @@ A tiny blogging platform with the following features:
         ))
     )
     ```
+# Websites using bittyblog
+* [cluoma.com](https://www.cluoma.com/) - personal blog
+* [LinuxGameNetwork](https://www.linuxgame.net/) - Linux gaming news blog
+
 
 # Credits
 
