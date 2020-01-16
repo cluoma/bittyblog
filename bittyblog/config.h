@@ -15,9 +15,9 @@
 #define NAVBAR_TITLE "bittyblog"
 #define HTML_TITLE "bittyblog - a sample bittyblog"
 #define DEFAULT_PAGE "blog"
-#define DB_PATH "/home/colin/Documents/bittyblog/bittyblog.db"
-#define IMAGE_PATH "/home/colin/Documents/bittyblog/www/images"
-#define TEMPLATE_PATH "/home/colin/Documents/bittyblog/templates"
+#define DB_PATH "~/bittyblog.db"
+#define IMAGE_PATH "~/www/images"
+#define TEMPLATE_PATH "~/templates"
 
 // Site Behaviour
 #define POSTS_PER_PAGE 5     // How many blog posts should be shown per pagination
