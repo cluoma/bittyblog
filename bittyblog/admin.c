@@ -205,10 +205,12 @@ int main()
         srand(time(NULL) + hash((unsigned char*)password) + hash((unsigned char*)password));
         snprintf(s, 20, "%x", rand());
         set_user_session(username, password, s);
+
         // Switch these depending if your browser supports status headers
         printf("Refresh: 0;url=%s?sid=%s\r\n\r\n", req.script_name, s);
         // printf("Status: 303 See Other\r\n");
         // printf("Location: %s?sid=%s\r\n\r\n", req.script_name, s);
+        
         bb_free(&req);
         
         #ifdef _FCGI

@@ -8,8 +8,10 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <string.h>
 #include <math.h>
+#include <sys/time.h>
 
 #define DEFINE_TEMPLATES
 #include "main.h"
@@ -31,6 +33,26 @@
 #include <fcgi_stdio.h>
 #endif
 
+
+struct timeval timer;
+int start_timer()
+{
+    timer.tv_sec = 0; timer.tv_usec = 0;
+    if (gettimeofday(&timer, NULL)) return 1;
+    return 0;
+}
+int end_timer()
+{
+    struct timeval cur;
+    if (timer.tv_sec == 0 && timer.tv_usec == 0) return 1;
+    if (gettimeofday(&cur, NULL)) return 1;
+
+    timer.tv_sec = cur.tv_sec - timer.tv_sec;
+    timer.tv_usec = cur.tv_usec - timer.tv_usec;
+
+    return 0;
+}
+
 int main(int argc, char **argv, char **envp)
 {
 
@@ -42,9 +64,14 @@ int main(int argc, char **argv, char **envp)
     }
 
     while(FCGI_Accept() >= 0) {
+#endif
+
+        start_timer();
+
         // Check if we can use gzip
         int accept_gzip = bb_check_accept_encoding("gzip");
 
+#ifdef _FCGI
         if (USE_CACHE) {
             uri = d_string_new(getenv("REQUEST_URI"));
             if (accept_gzip)
@@ -52,16 +79,19 @@ int main(int argc, char **argv, char **envp)
             bb_map_node *cached_resp = bb_map_get(cache, uri->str);
             time_t last_db_update = db_get_last_update();
             if (cached_resp != NULL && cached_resp->time >= last_db_update) {
+                
+                if(end_timer()) {
+                    printf("X-bb-time: %d.%06d\r\n", 0, 0);
+                } else {
+                    printf("X-bb-time: %d.%06d\r\n", timer.tv_sec, timer.tv_usec);
+                }
+
                 printf("X-bb-cache: hit\r\n");
                 fwrite(cached_resp->data, 1, cached_resp->datalen, stdout);
                 d_string_free(uri, 1);
                 continue;
             }
         }
-#endif
-#ifndef _FCGI
-    // Check if we can use gzip
-    int accept_gzip = bb_check_accept_encoding("gzip");
 #endif
 
     // Init page request
@@ -127,6 +157,7 @@ int main(int argc, char **argv, char **envp)
     }
 
     // Response headers
+    // Add content length and encoding type
     DString *headers = d_string_new("");
     d_string_append_printf(headers, "Content-Length: %lu\r\n", out->currentStringLength);
     if (accept_gzip) d_string_append_printf(headers, "Content-Encoding: gzip\r\n");
@@ -138,25 +169,25 @@ int main(int argc, char **argv, char **envp)
     {
         d_string_append_printf(headers, "Content-Type: text/html\r\n\r\n");
     }
+    // Add timer
+    if(end_timer()) {
+        printf("X-bb-time: %d.%06d\r\n", 0, 0);
+    } else {
+        printf("X-bb-time: %d.%06d\r\n", timer.tv_sec, timer.tv_usec);
+    }
+    // Add cache miss
+    printf("X-bb-cache: miss\r\n%s", headers->str);
 
     // Start of HTML output
-    printf("X-bb-cache: miss\r\n%s", headers->str);
     fwrite(out->str, 1, out->currentStringLength, stdout);
 
 #ifdef _FCGI
+    FCGI_Finish();
     if (USE_CACHE) {
-        // Finish CGI before updating cache
-        FCGI_Finish();
-
         d_string_prepend(out, headers->str);
         bb_map_insert(&cache, uri->str, out->str, out->currentStringLength);
         d_string_free(uri, 1);
     }
-    else
-    {
-        FCGI_Finish();
-    }
-    
 #endif
 
     d_string_free(template, 1);
@@ -168,6 +199,7 @@ int main(int argc, char **argv, char **envp)
     
 #ifdef _FCGI
     }  // Leave Accept loop
+
     // Final cleanup
     if (USE_CACHE) {
         bb_map_free(cache);
