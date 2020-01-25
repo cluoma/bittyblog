@@ -315,9 +315,12 @@ int db_admin_update_user(bb_user *u);
 int db_admin_delete_user(int id);
 
 // Login session interface
-int verify_user(const char* user, const char* password);
+// Verify a user by their email and password
+// if sid is supplied, a unique session key is set and stored in sid
+int verify_user(const char* user, const char* password, char* sid);
+// Verify a user by their session key
+// if u is supplied, user information is stored in u
 int verify_session(const char* sid, bb_user *u);
-int set_user_session(const char* user, const char* password, const char* sid);
 
 // Modules
 Archives load_archives();

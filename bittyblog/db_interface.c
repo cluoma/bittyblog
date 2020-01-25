@@ -963,19 +963,19 @@ Archives load_archives() {
     return archives;
 }
 
-int verify_user_cb(sqlite3_stmt* st, void* a) {
-    if(sqlite3_step(st) == SQLITE_ROW) {
-        *(int*)a = 1;
+int set_user_session_cb(sqlite3_stmt* st, void* a) {
+    if(sqlite3_step(st) == SQLITE_DONE) {
+        return 0;
+    } else {
+        return 1;
     }
-    return 0;
 }
-int verify_user(const char* user, const char* password) {
+int set_user_session(const char* user, const char* password, const char* session) {
     int success = 0;
-    int exists = 0;
 
-    success = execute_query(NULL, verify_user_cb, &exists, CHECK_USER, "ss", user, password);
+    success = execute_query(NULL, set_user_session_cb, NULL, SET_SESSION, "sss", session, user, password);
 
-    if (success && exists)
+    if (success)
         return 1;
     
     return 0;
@@ -1006,6 +1006,7 @@ int verify_session_cb(sqlite3_stmt* st, void* a) {
     } else {
         return 1;
     }
+
     return 0;
 }
 int verify_session(const char* session, bb_user *u) {
@@ -1019,20 +1020,39 @@ int verify_session(const char* session, bb_user *u) {
     return 0;
 }
 
-int set_user_session_cb(sqlite3_stmt* st, void* a) {
-    if(sqlite3_step(st) == SQLITE_DONE ) {
+int verify_user_cb(sqlite3_stmt* st, void* a) {
+    if(sqlite3_step(st) == SQLITE_ROW) {
         *(int*)a = 1;
+    } else {
+        *(int*)a = 0;
     }
     return 0;
 }
-int set_user_session(const char* user, const char* password, const char* session) {
+int verify_user(const char* user, const char* password, char* sid) {
     int success = 0;
     int exists = 0;
 
-    success = execute_query(NULL, set_user_session_cb, &exists, SET_SESSION, "sss", session, user, password);
+    success = execute_query(NULL, verify_user_cb, &exists, CHECK_USER, "ss", user, password);
 
-    if (success && exists)
+    // Return fail if query failed or if user does not exist
+    if (!success || !exists)
+        return 0;
+    
+    // If sid is null, return success
+    if (sid == NULL)
         return 1;
+
+    // Set user session and write it into sid if it was supplied
+    // Try 10 times to find a unique session, otherwise give up
+    int max_tries = 10;
+    for (int try = 0; try < max_tries; try++) {
+        srand(time(NULL) + hash((unsigned char*)user) + hash((unsigned char*)password));
+        snprintf(sid, 20, "%x", rand());
+
+        if (set_user_session(user, password, sid)) {
+            return 1;
+        }
+    }
     
     return 0;
 }

@@ -201,10 +201,10 @@ int main()
 
     // Authenticate user and set session
     char s [20];
-    if (username != NULL && password != NULL && verify_user(username, password)) {
-        srand(time(NULL) + hash((unsigned char*)username) + hash((unsigned char*)password));
-        snprintf(s, 20, "%x", rand());
-        set_user_session(username, password, s);
+    if (username != NULL &&
+        password != NULL &&
+        verify_user(username, password, s))
+    {
         sid = s;
     }
     
