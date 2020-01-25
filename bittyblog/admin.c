@@ -200,24 +200,12 @@ int main()
     char *action    = bb_cgi_get_var(req.q_vars, "a");      // Action
 
     // Authenticate user and set session
+    char s [20];
     if (username != NULL && password != NULL && verify_user(username, password)) {
-        char s [20];
-        srand(time(NULL) + hash((unsigned char*)password) + hash((unsigned char*)password));
+        srand(time(NULL) + hash((unsigned char*)username) + hash((unsigned char*)password));
         snprintf(s, 20, "%x", rand());
         set_user_session(username, password, s);
-
-        // Switch these depending if your browser supports status headers
-        printf("Refresh: 0;url=%s?sid=%s\r\n\r\n", req.script_name, s);
-        // printf("Status: 303 See Other\r\n");
-        // printf("Location: %s?sid=%s\r\n\r\n", req.script_name, s);
-        
-        bb_free(&req);
-        
-        #ifdef _FCGI
-            continue;
-        #else
-            return 0;
-        #endif
+        sid = s;
     }
     
     // Verify user, otherwise show login form
@@ -269,7 +257,9 @@ int main()
     /* Start of HTML outut */
     printf("Content-Type: text/html\r\n\r\n");
 
-    if (strcmp(GET_ENV_VAR("REQUEST_METHOD"), "POST") == 0)
+    if (strcmp(req.request_method, "POST") == 0 &&
+        category != NULL &&
+        action   != NULL)
     {
         if (strcmp(category, "users") == 0) {
             bb_user u;
@@ -388,7 +378,7 @@ int main()
             return 0;
         #endif
     }
-    else if (strcmp(GET_ENV_VAR("REQUEST_METHOD"), "GET") == 0)
+    else if (strcmp(req.request_method, "GET") == 0)
     {
         if (category != NULL && strcmp(category, "posts") == 0)
         { // Load list of posts
