@@ -15,7 +15,7 @@ set (My_Project_Version_Patch 0)
 
 set (My_Project_Version "${My_Project_Version_Major}.${My_Project_Version_Minor}.${My_Project_Version_Patch}")
 
-set (My_Project_Copyright_Date "2017-2018")
+set (My_Project_Copyright_Date "2017-2019")
 set (My_Project_Copyright "Copyright © ${My_Project_Copyright_Date} ${My_Project_Author}.")
 
 string(TOUPPER ${My_Project_Title} My_Project_Title_Caps  )
@@ -92,7 +92,7 @@ MACRO(ADD_PUBLIC_HEADER target filename)
 
 	SET_TARGET_PROPERTIES(${target} PROPERTIES
 		XCODE_ATTRIBUTE_VALID_ARCHITECTURES
-		"x86_64 i386 armv6 armv7 armv7s arm64"
+		"x86_64 armv6 armv7 armv7s arm64"
 	)
 
 ENDMACRO(ADD_PUBLIC_HEADER)
@@ -236,7 +236,7 @@ else()
 		# Process source files to look for tests to run
 		add_custom_command (
 			OUTPUT ${PROJECT_BINARY_DIR}/AllTests.c
-			COMMAND sh ${PROJECT_SOURCE_DIR}/test/make-tests.sh ${PROJECT_SOURCE_DIR}/src/*.c > ${PROJECT_BINARY_DIR}/AllTests.c
+			COMMAND bash ${PROJECT_SOURCE_DIR}/test/make-tests.sh ${PROJECT_SOURCE_DIR}/src/*.c > ${PROJECT_BINARY_DIR}/AllTests.c
 		)
 
 		enable_testing()
@@ -261,11 +261,11 @@ endif()
 if (APPLE)
 
 	# Configure backwards-compatible support (if your project allows it)
-	SET(CMAKE_OSX_DEPLOYMENT_TARGET "10.4" CACHE STRING "Deployment target for OSX" FORCE)
+	SET(CMAKE_OSX_DEPLOYMENT_TARGET "10.6" CACHE STRING "Deployment target for OSX" FORCE)
 
 	# Compile for x86_64 and i386.  ppc no longer supported
 	if(CMAKE_BUILD_TYPE MATCHES "Release")
-		SET (CMAKE_OSX_ARCHITECTURES x86_64;i386)
+		SET (CMAKE_OSX_ARCHITECTURES x86_64)
 	endif(CMAKE_BUILD_TYPE MATCHES "Release")
 
 	# Use PackageMaker for installers?
@@ -336,16 +336,21 @@ ADD_PUBLIC_HEADER(libMagnum src/d_string.h)
 ADD_PUBLIC_HEADER(libMagnum src/parson.h)
 
 # Create a command-line app?
-if (NOT DEFINED TEST)
-	add_executable(magnum
-		src/main.c
-		src/d_string.c
-		src/d_string.h
-		${header_files}
-	)
+if(hasParent)
+else()
 
-	# Link the library to the app?
-	target_link_libraries(magnum libMagnum)
+	if (DEFINED TEST)
+	else()
+		add_executable(magnum
+			src/main.c
+			src/d_string.c
+			src/d_string.h
+			${header_files}
+		)
+
+		# Link the library to the app?
+		target_link_libraries(magnum libMagnum)
+	endif()
 endif()
 
 # Xcode settings for fat binaries
@@ -368,11 +373,15 @@ endif()
 
 # install (FILES ${public_header_files} DESTINATION local/include/libFoo) 
 
-if (NOT DEFINED TEST)
-	install (TARGETS magnum
-		DESTINATION bin
-		COMPONENT application
-	)
+if(hasParent)
+else()
+	if (DEFINED TEST)
+	else()
+		install (TARGETS magnum
+			DESTINATION bin
+			COMPONENT application
+		)
+	endif()
 endif()
 
 set (CPACK_COMPONENT_APPLICATION_DISPLAY_NAME "Magnum")
