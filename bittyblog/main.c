@@ -88,6 +88,9 @@ int main(int argc, char **argv, char **envp)
 
                 printf("X-bb-cache: hit\r\n");
                 fwrite(cached_resp->data, 1, cached_resp->datalen, stdout);
+
+                FCGI_Finish();
+
                 d_string_free(uri, 1);
                 continue;
             }
@@ -204,6 +207,5 @@ int main(int argc, char **argv, char **envp)
     if (USE_CACHE) {
         bb_map_free(cache);
     }
-    FCGI_Finish();
 #endif
 }
