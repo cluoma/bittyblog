@@ -26,6 +26,17 @@
 #define ALL             0
 #define THUMBNAILS      1
 
+// Database connection
+enum db_types  { DB_SQLITE, DB_TYPE_LAST };
+enum db_modes  { DB_READ, DB_WRITE, DB_MODE_LAST };
+enum db_states { DB_OPEN, DB_CLOSED, DB_STATE_LAST };
+typedef struct {
+	int dbtype;
+	int mode;
+	int state;
+	void *con;
+} db_conn;
+
 // User information
 typedef struct {
     int id;
@@ -64,6 +75,9 @@ typedef struct {
 
 // Main page request state
 typedef struct {
+    // Database connection
+    db_conn *dbcon;
+
     // CGI Vars
     char *request_method;
     char *script_name;
@@ -95,6 +109,8 @@ typedef struct {
 void bb_init(bb_page_request *, int options);
 void bb_free(bb_page_request *);
 
+void bb_set_dbcon(bb_page_request *, db_conn *);
+void bb_load_pages(bb_page_request *);
 void bb_load_posts(bb_page_request *);
 
 bb_vec * bb_image_list(bb_page_request *, int thumbnail_only);

@@ -106,6 +106,9 @@ void bb_free(bb_page_request *req)
 
 void bb_init(bb_page_request *req, int options)
 {
+    // Set NULL database connection
+    req->dbcon = NULL;
+
     // Get environment variables
     req->request_method = GET_ENV_VAR("REQUEST_METHOD");
     req->script_name    = GET_ENV_VAR("SCRIPT_NAME");
@@ -138,18 +141,6 @@ void bb_init(bb_page_request *req, int options)
         req->page_name = page;
     }
 
-    // Get a list of all pages on the site
-    req->pages = db_pages();
-    req->page = NULL;
-    // Check if the request page exists
-    for (int i = 0; i < bb_vec_count(req->pages); i++) {
-        bb_page *page = bb_vec_get(req->pages, i);
-        if (strcmp(page->id_name, req->page_name) == 0) {
-            req->page = page;
-            break;
-        }
-    }
-
     // Fill in the rest of the needed info
     req->copyright_owner    = COPYRIGHT_OWNER;
     req->navbar_title       = NAVBAR_TITLE;
@@ -160,6 +151,25 @@ void bb_init(bb_page_request *req, int options)
     // Init variables for blog posts
     req->posts = NULL;
     req->total_post_count = 0;
+}
+
+void bb_set_dbcon(bb_page_request *req, db_conn *con) {
+    req->dbcon = con;
+}
+
+// Load all pages, and request page, from database
+void bb_load_pages(bb_page_request *req) {
+    // Get a list of all pages on the site
+    req->pages = db_pages(req->dbcon);
+    req->page = NULL;
+    // Check if the request page exists
+    for (int i = 0; i < bb_vec_count(req->pages); i++) {
+        bb_page *page = bb_vec_get(req->pages, i);
+        if (strcmp(page->id_name, req->page_name) == 0) {
+            req->page = page;
+            break;
+        }
+    }
 }
 
 // Load the requested posts and store them
@@ -179,37 +189,37 @@ void bb_load_posts(bb_page_request *req) {
     {
         if (search != NULL)
         {
-            entries = db_nsearch(req->page->id_name, search, POSTS_PER_PAGE, (int)bb_strtol(start, 0));
-            req->total_post_count = db_search_count(req->page->id_name, search);
+            entries = db_nsearch(req->dbcon, req->page->id_name, search, POSTS_PER_PAGE, (int)bb_strtol(start, 0));
+            req->total_post_count = db_search_count(req->dbcon, req->page->id_name, search);
         }
         else if (tag != NULL)
         {
-            entries = db_ntag(tag, POSTS_PER_PAGE, (int)bb_strtol(start, 0));
-            req->total_post_count = db_tag_count(tag);
+            entries = db_ntag(req->dbcon, tag, POSTS_PER_PAGE, (int)bb_strtol(start, 0));
+            req->total_post_count = db_tag_count(req->dbcon, tag);
         }
         else if (author != NULL)
         {
-            entries = db_nauthor(author, POSTS_PER_PAGE, (int)bb_strtol(start, 0));
-            req->total_post_count = db_author_count(author);
+            entries = db_nauthor(req->dbcon, author, POSTS_PER_PAGE, (int)bb_strtol(start, 0));
+            req->total_post_count = db_author_count(req->dbcon, author);
         }
         else if (start != NULL)
         {
-            entries = db_nposts(req->page->id_name, POSTS_PER_PAGE, (int)bb_strtol(start, 0));
-            req->total_post_count = db_count(req->page->id_name);
+            entries = db_nposts(req->dbcon, req->page->id_name, POSTS_PER_PAGE, (int)bb_strtol(start, 0));
+            req->total_post_count = db_count(req->dbcon, req->page->id_name);
         }
         else if (month != NULL && year != NULL)
         {
-            entries = db_monthyear(req->page->id_name, (int)bb_strtol(month, 1), (int)bb_strtol(year, 1));
+            entries = db_monthyear(req->dbcon, req->page->id_name, (int)bb_strtol(month, 1), (int)bb_strtol(year, 1));
         }
         else
         {
-            entries = db_nposts(req->page->id_name, POSTS_PER_PAGE, 0);
-            req->total_post_count = db_count(req->page->id_name);
+            entries = db_nposts(req->dbcon, req->page->id_name, POSTS_PER_PAGE, 0);
+            req->total_post_count = db_count(req->dbcon, req->page->id_name);
         }
     }
     else
     {
-        entries = db_id((int)bb_strtol(id, 1));
+        entries = db_id(req->dbcon, (int)bb_strtol(id, 1));
     }
     req->posts = entries;
 }

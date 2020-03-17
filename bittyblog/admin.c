@@ -192,6 +192,7 @@ int main()
     // Init page request
     bb_page_request req;
     bb_init(&req, PARSE_GET | PARSE_POST);
+    bb_load_pages(&req);
 
     char *username  = bb_cgi_get_var(req.q_vars, "username");
     char *password  = bb_cgi_get_var(req.q_vars, "password");

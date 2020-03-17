@@ -17,15 +17,11 @@
 #include "vec.h"
 #include "bittyblog.h"
 
-// Archives holds a list of months, years, and post counts
-// for those archives sidebar element
-typedef struct {
-    char **month_s;
-    int *month;
-    int *year;
-    int *post_count;
-    int row_count;
-} Archives;
+/*
+ * General interface for opening database connections
+ */
+db_conn * db_open_conn(int dbtype, int mode);
+int db_close_conn(db_conn *c);
 
 /*
  * Queries for loading posts
@@ -188,13 +184,6 @@ AND CAST(strftime('%Y',time,'unixepoch') AS INT) = @YEAR \
 AND p.visible = 1 \
 AND datetime(time, 'unixepoch') <= datetime('now') \
 ORDER BY time DESC"
-#define ARCHIVES "SELECT strftime('%m',time,'unixepoch') AS month, strftime('%Y',time,'unixepoch') AS year, COUNT(*) AS num_posts \
-FROM posts p \
-INNER JOIN (SELECT * FROM pages WHERE name_id = 'blog') a ON p.page_id = a.id \
-WHERE p.visible = 1 \
-AND datetime(time, 'unixepoch') <= datetime('now') \
-GROUP BY month, year \
-ORDER BY time DESC"
 #define USER_INFO_FROM_NAME_ID "SELECT id, email, name_id, name, about, thumbnail \
 FROM users \
 WHERE name_id = ?"
@@ -277,22 +266,27 @@ ON p.id = t.page_id"
 /*
  * Post query functions for viewing
  */
-int db_count(char* page_name_id);
-int db_search_count(char* page_name_id, char* keyword);
-int db_tag_count(char* tag);
-int db_author_count(char* name_id);
-bb_vec * db_search(char* page_name_id, char* keyword);
-bb_vec * db_nsearch(char* page_name_id, char* keyword, int count, int offset);
-bb_vec * db_ntag(char* tag, int count, int offset);
-bb_vec * db_nauthor(char* name_id, int count, int offset);
-bb_vec * db_monthyear(char* page_name_id, int month, int year);
-bb_vec * db_nposts(char* page_name_id, int count, int offset);
-bb_vec * db_id(int id);
+int 		db_count		(db_conn* c, char* page_name_id);
+int 		db_search_count	(db_conn* c, char* page_name_id, char* keyword);
+int 		db_tag_count	(db_conn* c, char* tag);
+int 		db_author_count	(db_conn* c, char* name_id);
+bb_vec * 	db_search		(db_conn* c, char* page_name_id, char* keyword);
+bb_vec * 	db_nsearch		(db_conn* c, char* page_name_id, char* keyword, int count, int offset);
+bb_vec * 	db_ntag			(db_conn* c, char* tag, int count, int offset);
+bb_vec * 	db_nauthor		(db_conn* c, char* name_id, int count, int offset);
+bb_vec * 	db_monthyear	(db_conn* c, char* page_name_id, int month, int year);
+bb_vec * 	db_nposts		(db_conn* c, char* page_name_id, int count, int offset);
+bb_vec * 	db_id			(db_conn* c, int id);
 
 /*
  * Author query functions for viewing
  */
-bb_vec * db_author(char* name_id);
+bb_vec * db_author(db_conn* c, char* name_id);
+
+// Load pages from database
+bb_vec * db_pages(db_conn* c);
+// Get the timestamp of when the database was last updated
+time_t db_get_last_update(db_conn* c);
 
 /*
  * Admin DB functions: add, remove, etc.
@@ -321,17 +315,5 @@ int verify_user(const char* user, const char* password, char* sid);
 // Verify a user by their session key
 // if u is supplied, user information is stored in u
 int verify_session(const char* sid, bb_user *u);
-
-// Modules
-Archives load_archives();
-char *nmonth_to_smonth(int month);
-// Vector implementation that holds results
-void free_archives(Archives *archives);
-
-// Load pages from database
-bb_vec * db_pages();
-
-// Get the timestamp of when the database was last updated
-time_t db_get_last_update();
 
 #endif /* db_interface_h */
