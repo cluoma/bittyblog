@@ -131,7 +131,7 @@ void bb_init(bb_page_request *req, int options)
         req->rewrite = 0;
     }
 
-    // Get the requested page name, default to 'blog' if none was supplied
+    // Get the requested page name, default to DEFAULT_PAGE if none was supplied
     char * page = bb_cgi_get_var(req->q_vars, "page");
     if( page == NULL ) {
         bb_cgi_add_var(&req->q_vars, "page", DEFAULT_PAGE, strlen(DEFAULT_PAGE)+1);
