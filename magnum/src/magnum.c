@@ -97,8 +97,9 @@ struct closure {
 	DString 	*		out;		//!< Output destination
 
 	const char 	*	directory;	//!< Initial search directory for partials
+	void * shared_data;
 
-	int (*load_partial)(char *, DString *, struct closure *, char **);
+	int (*load_partial)(char *, DString *, struct closure *, char **, void *);
 
 	struct {
 		JSON_Value *	container;
@@ -191,7 +192,7 @@ void indent_text(DString * text, const char * indent, size_t indent_len) {
 
 
 // Load partial
-static int load_partial(char * name, DString * partial, struct closure * c, char ** search_directory) {
+static int load_partial(char * name, DString * partial, struct closure * c, char ** search_directory, void * shared_data) {
 	// Require search_directory to enable partials
 	if (*search_directory == NULL) {
 		return -1;
@@ -834,7 +835,7 @@ static int parse(DString * source, const char * opener, const char * closer, str
 					partial = d_string_new("");
 					dir = my_strdup(search_directory);
 
-					rc = (*(closure->load_partial))(key_name, partial, closure, &dir);
+					rc = (*(closure->load_partial))(key_name, partial, closure, &dir, closure->shared_data);
 
 					if (standalone) {
 						// Determine leading whitespace
@@ -927,7 +928,7 @@ static int parse(DString * source, const char * opener, const char * closer, str
 
 /// Given a source string, populate it using data from a JSON value.
 /// The resulting text will be appended to `out`.
-int magnum_populate_from_json(DString * source, JSON_Value * json, DString * out, const char * search_directory, int (*load_p)(char *, DString *, struct closure *, char **)) {
+int magnum_populate_from_json(DString * source, JSON_Value * json, DString * out, const char * search_directory, int (*load_p)(char *, DString *, struct closure *, char **, void *)) {
 	int rc;
 
 	struct closure c;
@@ -936,6 +937,39 @@ int magnum_populate_from_json(DString * source, JSON_Value * json, DString * out
 	c.depth = 0;
 	c.out = out;
 	c.directory = search_directory;
+	c.stack[0].container = NULL;
+	c.stack[0].val = json;
+	c.stack[0].index = 0;
+	c.stack[0].count = 1;
+
+	if (load_p) {
+		c.load_partial = load_p;
+	} else {
+		c.load_partial = &load_partial;
+	}
+
+	rc = parse(source, "{{", "}}", &c, search_directory);
+
+	if (rc < 0) {
+		fprintf(stderr, "Error parsing Mustache templates\n");
+	}
+
+	return rc;
+}
+
+
+/// Given a source string, populate it using data from a JSON value.
+/// The resulting text will be appended to `out`.
+int magnum_populate_from_json_shared_data(DString * source, JSON_Value * json, DString * out, const char * search_directory, int (*load_p)(char *, DString *, struct closure *, char **, void *), void * shared_data) {
+	int rc;
+
+	struct closure c;
+
+	c.root = json;
+	c.depth = 0;
+	c.out = out;
+	c.directory = search_directory;
+	c.shared_data = shared_data;
 	c.stack[0].container = NULL;
 	c.stack[0].val = json;
 	c.stack[0].index = 0;
@@ -973,7 +1007,7 @@ int magnum_populate_from_string(DString * source, const char * string, DString *
 
 /// Given a source string, populate it using data from a JSON string, using a custom load_partial routine
 /// The resulting text will be appended to `out`.
-int magnum_populate_from_string_custom_partial(DString * source, const char * string, DString * out, const char * search_directory, int (*load_p)(char *, DString *, struct closure *, char **)) {
+int magnum_populate_from_string_custom_partial(DString * source, const char * string, DString * out, const char * search_directory, int (*load_p)(char *, DString *, struct closure *, char **, void *)) {
 	JSON_Value * v = json_parse_string(string);
 
 	int rc = magnum_populate_from_json(source, v, out, search_directory, load_p);

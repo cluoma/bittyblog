@@ -85,7 +85,12 @@ typedef struct closure closure;
 /// Given a source string, populate it using data from a JSON value.
 /// The resulting text will be appended to `out`.
 /// Pass NULL as `load_p` to use the default load_partial function.
-int magnum_populate_from_json(DString * source, JSON_Value * json, DString * out, const char * search_directory, int (*load_p)(char *, DString *, closure *, char **));
+int magnum_populate_from_json(DString * source, JSON_Value * json, DString * out, const char * search_directory, int (*load_p)(char *, DString *, closure *, char **, void *));
+
+
+/// Given a source string, populate it using data from a JSON value.
+/// The resulting text will be appended to `out`.
+int magnum_populate_from_json_shared_data(DString * source, JSON_Value * json, DString * out, const char * search_directory, int (*load_p)(char *, DString *, struct closure *, char **, void *), void * shared_data);
 
 
 /// Given a source string, populate it using data from a JSON string.
@@ -95,7 +100,7 @@ int magnum_populate_from_string(DString * source, const char * string, DString *
 
 /// Given a source string, populate it using data from a JSON string, using a custom load_partial routine
 /// The resulting text will be appended to `out`.
-int magnum_populate_from_string_custom_partial(DString * source, const char * string, DString * out, const char * search_directory, int (*load_p)(char *, DString *, struct closure *, char **));
+int magnum_populate_from_string_custom_partial(DString * source, const char * string, DString * out, const char * search_directory, int (*load_p)(char *, DString *, struct closure *, char **, void *));
 
 
 /// Given a source string, populate it using data from a JSON file.
