@@ -1,23 +1,23 @@
 CC=gcc
 LIB=-L .
-INC=-Imagnum/src -Isqlite3
+INC=-Imagnum/src -Isqlite3 -Imd4c
 WARN=-Wall -Wvla -Wno-format-truncation
 FCGI=y
 
 all: bb admin
 
-bb: libMagnum.a libsqlite3.a
+bb: libMagnum.a libsqlite3.a libmd4c.a
 ifeq ($(FCGI),y)
 	$(CC) -o bb.cgi -D_DEFAULT_SOURCE -D_FCGI $(WARN) -std=c99 -O3 bittyblog/main.c bittyblog/db_interface.c bittyblog/bittyblog.c bittyblog/vec.c bittyblog/cgi.c bittyblog/to_json.c bittyblog/cachemap.c bittyblog/mod_archives.c $(LIB) $(INC) -lsqlite3 -ldl -lz -lfcgi -lMagnum
 else
 	$(CC) -o bb.cgi -D_DEFAULT_SOURCE $(WARN) -std=c99 -O3 bittyblog/main.c bittyblog/db_interface.c bittyblog/bittyblog.c bittyblog/vec.c bittyblog/cgi.c bittyblog/to_json.c bittyblog/mod_archives.c $(LIB) $(INC) -lsqlite3 -ldl -lz -lMagnum
 endif
 
-admin: libMagnum.a libsqlite3.a
+admin: libMagnum.a libsqlite3.a libmd4c.a
 ifeq ($(FCGI),y)
-	$(CC) -o bbadmin.cgi -D_DEFAULT_SOURCE -D_FCGI $(WARN) -std=c99 -O3 bittyblog/admin.c bittyblog/db_interface.c bittyblog/bittyblog.c bittyblog/vec.c bittyblog/cgi.c bittyblog/to_json.c bittyblog/cachemap.c $(LIB) $(INC) -lsqlite3 -ldl -lz -lfcgi -lMagnum
+	$(CC) -o bbadmin.cgi -D_DEFAULT_SOURCE -D_FCGI $(WARN) -std=c99 -O3 bittyblog/admin.c bittyblog/db_interface.c bittyblog/bittyblog.c bittyblog/vec.c bittyblog/cgi.c bittyblog/to_json.c bittyblog/cachemap.c $(LIB) $(INC) -lsqlite3 -ldl -lz -lfcgi -lMagnum -lmd4c
 else
-	$(CC) -o bbadmin.cgi -D_DEFAULT_SOURCE $(WARN) -std=c99 -O3 bittyblog/admin.c bittyblog/db_interface.c bittyblog/bittyblog.c bittyblog/vec.c bittyblog/cgi.c bittyblog/to_json.c $(LIB) $(INC) -lsqlite3 -ldl -lz -lMagnum
+	$(CC) -o bbadmin.cgi -D_DEFAULT_SOURCE $(WARN) -std=c99 -O3 bittyblog/admin.c bittyblog/db_interface.c bittyblog/bittyblog.c bittyblog/vec.c bittyblog/cgi.c bittyblog/to_json.c $(LIB) $(INC) -lsqlite3 -ldl -lz -lMagnum -lmd4c
 endif
 
 install: bb admin
@@ -40,6 +40,13 @@ test:
 	ar rcs libMagnum.a d_string.o file.o json.o parson.o magnum.o
 	$(CC) -o test_p2 -D_DEFAULT_SOURCE -Wall -Wvla -std=c99 -O3 test/test.c bittyblog/db_interface.c bittyblog/bittyblog.c bittyblog/vec.c bittyblog/cgi.c bittyblog/to_json.c sqlite3/sqlite3.c $(LIB) $(INC) -lpthread -ldl -lz -lMagnum -Isqlite3
 	rm d_string.o file.o json.o parson.o magnum.o
+
+libmd4c.a:
+	gcc -c -o md4c.o -O3 md4c/md4c.c
+	gcc -c -o md4chtml.o -O3 md4c/md4c-html.c
+	gcc -c -o entity.o -O3 md4c/entity.c
+	ar rcs libmd4c.a md4c.o md4chtml.o entity.o
+	rm md4c.o entity.o md4chtml.o
 
 libsqlite3.a:
 	gcc -c -o libsqlite3.o -O3 -DSQLITE_THREADSAFE=0 sqlite3/sqlite3.c
