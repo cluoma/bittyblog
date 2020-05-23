@@ -258,6 +258,7 @@ int bb_post_init(bb_post* p) {
     p->title = NULL;
     p->text = NULL;
     p->text_len = 0;
+    p->markdown = NULL;
     p->time = NULL;
     p->byline = NULL;
     p->extra = NULL;
@@ -273,6 +274,7 @@ void bb_post_free(bb_post* p) {
     if (p->page != NULL)        free(p->page);
     if (p->title != NULL)       free(p->title);
     if (p->text != NULL)        free(p->text);
+    if (p->markdown != NULL)    free(p->markdown);
     if (p->time != NULL)        free(p->time);
     if (p->byline != NULL)      free(p->byline);
     if (p->extra != NULL)       free(p->extra);
