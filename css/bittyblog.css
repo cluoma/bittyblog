@@ -936,6 +936,25 @@ h6, .h6 {
     margin-bottom: 20px;
     color: #999;
 }
+.blog-post-body h1 {
+    font-size: 28px;
+}
+.blog-post-body h2 {
+    font-size: 26px;
+}
+.blog-post-body h3 {
+    font-size: 24px;
+}
+.blog-post-body h4 {
+    font-size: 22px;
+}
+.blog-post-body h5 {
+    font-size: 20px;
+}
+.blog-post-body h6 {
+    font-size: 18px;
+}
+
 .blog-post-tag {
     background-color: #428bca;
     color: white;

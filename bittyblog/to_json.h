@@ -21,7 +21,7 @@ enum actions {
 
 int bb_default_to_json(JSON_Object*, bb_page_request*);
 int bb_nav_buttons_to_json(JSON_Object *, bb_page_request *);
-void bb_posts_to_json(JSON_Object *, bb_page_request *, int format);
+void bb_posts_to_json(JSON_Object *, bb_page_request *);
 void bb_special_info_box_to_json(JSON_Object *root_object, bb_page_request *req);
 
 /*

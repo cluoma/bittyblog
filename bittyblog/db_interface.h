@@ -203,7 +203,7 @@ GROUP BY post_id \
 ON p.id = t.post_id \
 LEFT JOIN users u ON p.user_id = u.id \
 ORDER BY time DESC"
-#define ADMIN_POST_ID_QUERY "SELECT title, page_id, p.id as id, text, byline, datetime(time, 'unixepoch') as time, time as time_r, p.thumbnail, visible, tags, \
+#define ADMIN_POST_ID_QUERY "SELECT title, page_id, p.id as id, text, markdown, byline, datetime(time, 'unixepoch') as time, time as time_r, p.thumbnail, visible, tags, \
 p.user_id AS user_id, COALESCE(u.name_id, 'Unknown') AS user_name_id, COALESCE(u.name, 'Unknown') AS user_name \
 FROM posts p \
 LEFT JOIN (SELECT tr.post_id, group_concat(t.tag, ', ') `tags` \
@@ -218,9 +218,9 @@ WHERE p.id = @ID"
 /*
  * Queries for adding, updating, and removing posts, pages, and users
  */
-#define ADMIN_NEW_POST "INSERT INTO posts (page_id, user_id, title, text, time, byline, thumbnail, visible) VALUES(?, ?, ?, ?, ?, ?, ?, ?)"
+#define ADMIN_NEW_POST "INSERT INTO posts (page_id, user_id, title, text, markdown, time, byline, thumbnail, visible) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)"
 #define ADMIN_ROWID_LAST_POST "SELECT last_insert_rowid() FROM posts"
-#define ADMIN_UPDATE_POST "UPDATE posts SET page_id = ?, user_id = ?, title = ?, time = ?, text = ?, byline = ?, thumbnail = ?, visible = ? WHERE id = ?"
+#define ADMIN_UPDATE_POST "UPDATE posts SET page_id = ?, user_id = ?, title = ?, time = ?, text = ?, markdown = ?, byline = ?, thumbnail = ?, visible = ? WHERE id = ?"
 #define ADMIN_DELETE_POST "DELETE FROM posts WHERE id = ?"
 
 #define ADMIN_NEW_PAGE "INSERT INTO pages (name_id, name, style) VALUES(?, ?, ?)"

@@ -27,10 +27,28 @@
 #include <d_string.h>
 #include <file.h>
 
+#include <md4c-html.h>
 
 #ifdef _FCGI
 #include <fcgi_stdio.h>
 #endif
+
+void process_html_output(const MD_CHAR* c, MD_SIZE i, void* data)
+{
+    if (i <= 0) return;
+
+    bb_post *p = data;
+    char *for_free = p->text;
+    p->text = realloc(p->text, p->text_len + i + 1);
+    if (p->text == NULL) {
+        free(for_free);
+        p->text_len = 0;
+        return;
+    }
+    memcpy(p->text + p->text_len, c, i);
+    p->text[p->text_len + i] = '\0';
+    p->text_len += i;
+}
 
 void users(JSON_Object *root_object, bb_page_request* req) {
     bb_vec * users = db_admin_all_users();
@@ -113,7 +131,10 @@ void fill_post(bb_page_request *req, bb_post *p) {
     } else {p->time_r = time(NULL);}
     // Text
     if (bb_cgi_get_var(req->q_vars, "post_text") != NULL) {
-        p->text = bb_cgi_get_var(req->q_vars, "post_text");
+        p->text = NULL;
+        p->text_len = 0;
+        p->markdown = bb_cgi_get_var(req->q_vars, "post_text");
+        md_html(p->markdown, strlen(p->markdown), process_html_output, p, 0, 0);
     } else {p->text = NULL;}
     // Byline
     if (bb_cgi_get_var(req->q_vars, "post_byline") != NULL) {
@@ -306,6 +327,7 @@ int main()
                 }
                 printf("Successful :)<br>");
             }
+            if(p.text != NULL) free(p.text);
         } else if (strcmp(category, "pages") == 0) {
             bb_page p;
             fill_page(&req, &p);

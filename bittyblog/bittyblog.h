@@ -55,6 +55,8 @@ typedef struct {
     char *page;
     char *title;
     char *text;
+    unsigned long text_len;
+    char *markdown;
     char *time;
     time_t time_r;
     char *byline;

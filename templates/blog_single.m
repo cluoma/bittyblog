@@ -19,7 +19,7 @@
         <a href="{{script_name}}?page={{page_name}}&id={{p_id}}"><h2 class="blog-post-title">{{title}}</h2></a>
         <p class="blog-post-meta">By <a href="{{script_name}}?author={{user_name_id}}">{{user_name}}</a>, {{time}}</p>
         {{/rewrite}}
-        <p>{{&text}}</p>
+        <div class="blog-post-body">{{&text}}</div>
         <hr>
         {{#rewrite}}
         <p style="clear: both; margin: 0px;"><b>Tags:</b> {{#tags}}<a class="blog-post-tag" href="/tag/{{.}}">{{.}}</a> {{/tags}}</p>

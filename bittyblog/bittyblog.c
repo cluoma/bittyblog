@@ -257,6 +257,7 @@ int bb_post_init(bb_post* p) {
     p->page = NULL;
     p->title = NULL;
     p->text = NULL;
+    p->text_len = 0;
     p->time = NULL;
     p->byline = NULL;
     p->extra = NULL;

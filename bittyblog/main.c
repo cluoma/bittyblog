@@ -126,7 +126,7 @@ int main(int argc, char **argv, char **envp)
     if (req.page != NULL) {
         // Posts
         bb_load_posts(&req);
-        bb_posts_to_json(root_object, &req, 1);
+        bb_posts_to_json(root_object, &req);
 
         // Special info box
         bb_special_info_box_to_json(root_object, &req);
@@ -163,6 +163,7 @@ int main(int argc, char **argv, char **envp)
     // Response content
     DString *out = d_string_new("");
     magnum_populate_from_json(template, root_value, out, TEMPLATE_PATH, NULL);
+    //magnum_populate_from_json_shared_data(template, root_value, out, TEMPLATE_PATH, bb_load_partial, &req);
 
     // Compress output if we need to
     if (accept_gzip) {

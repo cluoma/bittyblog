@@ -264,6 +264,8 @@ int load_posts_cb(sqlite3_stmt *results, void* data) {
                 COPY_SQLITE3_STRING(post->page, results, i);
             } else if (strcmp(col_name, "text") == 0) {
                 COPY_SQLITE3_STRING(post->text, results, i);
+            } else if (strcmp(col_name, "markdown") == 0) {
+                COPY_SQLITE3_STRING(post->markdown, results, i);
             } else if (strcmp(col_name, "time") == 0) {
                 COPY_SQLITE3_STRING(post->time, results, i);
             } else if (strcmp(col_name, "time_r") == 0) {
@@ -691,8 +693,8 @@ int db_new_post(bb_post *p) {
     }
 
     // Add post to database
-    rc = execute_query(db, NULL, NULL, ADMIN_NEW_POST, "iississi",
-                p->page_id, p->user.id, p->title, p->text, p->time_r, p->byline, p->thumbnail, p->visible);
+    rc = execute_query(db, NULL, NULL, ADMIN_NEW_POST, "iisssissi",
+                p->page_id, p->user.id, p->title, p->text, p->markdown, p->time_r, p->byline, p->thumbnail, p->visible);
     if (!rc) {
         fprintf(stderr, "Failed to add post to database\n");
         sqlite3_close(db);
@@ -729,8 +731,8 @@ int db_update_post(bb_post *p) {
     }
 
     // Update post to database
-    rc = execute_query(db, NULL, NULL, ADMIN_UPDATE_POST, "iisisssii",
-                p->page_id, p->user.id, p->title, p->time_r, p->text, p->byline, p->thumbnail, p->visible, p->p_id);
+    rc = execute_query(db, NULL, NULL, ADMIN_UPDATE_POST, "iisissssii",
+                p->page_id, p->user.id, p->title, p->time_r, p->text, p->markdown, p->byline, p->thumbnail, p->visible, p->p_id);
     if (!rc) {
         fprintf(stderr, "Failed to update post to database\n");
         sqlite3_close(db);
