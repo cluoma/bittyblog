@@ -2,6 +2,7 @@
 
 A tiny blogging platform with the following features:
 * compiles to 2 executables and a single sqlite3 database for easy backups
+* write blog posts in Markdown or html
 * permalinks using URL rewrites
 * fastCGI or classic CGI modes
 * customize pages with mustache HTML templates
