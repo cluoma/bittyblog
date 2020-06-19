@@ -7,6 +7,7 @@ A tiny blogging platform with the following features:
 * fastCGI or classic CGI modes
 * customize pages with mustache HTML templates
 * simple cache for fast responses
+* serve gzipped HTML if supported by browser
 
 # Installation
 
