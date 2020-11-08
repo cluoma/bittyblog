@@ -169,6 +169,10 @@ void fill_page(bb_page_request *req, bb_page *p) {
     if (bb_cgi_get_var(req->q_vars, "page_id") != NULL) {
         p->id = bb_strtol(bb_cgi_get_var(req->q_vars, "page_id"), -1);
     } else {p->id = -1;}
+    // Z - Index
+    if (bb_cgi_get_var(req->q_vars, "page_zindex") != NULL) {
+        p->zindex = bb_strtol(bb_cgi_get_var(req->q_vars, "page_zindex"), 0);
+    } else {p->zindex = 0;}
     // Page Style
     if (bb_cgi_get_var(req->q_vars, "page_style") != NULL) {
         p->style = bb_strtol(bb_cgi_get_var(req->q_vars, "page_style"), 0);

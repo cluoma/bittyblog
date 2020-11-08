@@ -103,11 +103,11 @@
     <br>
 
     <table>
-        <tr><th>Edit</th><th>ID</th><th>ID Name</th><th>Proper Name</th><th>Style</th><th>Tags</th><th>Delete</th></tr>
+        <tr><th>Edit</th><th>ID</th><th>Z-Index</th><th>ID Name</th><th>Proper Name</th><th>Style</th><th>Tags</th><th>Delete</th></tr>
         {{#pages}}
         <tr>
             <td><a href="{{script_name}}?sid={{sid}}&page_id={{id}}">Edit</a></td>
-            <td>{{id}}</td><td>{{id_name}}</td><td>{{name}}</td><td>{{style_name}}</td><td>{{#tags}}{{.}}, {{/tags}}</td>
+            <td>{{id}}</td><td>{{zindex}}</td><td>{{id_name}}</td><td>{{name}}</td><td>{{style_name}}</td><td>{{#tags}}{{.}}, {{/tags}}</td>
             <td>
                 <form action="{{script_name}}?sid={{sid}}&c=pages&a=delete" method="POST">
                 <input type="hidden" name="page_id" value="{{id}}" />
@@ -121,6 +121,7 @@
 
     {{#category_new_pages}}
     <form role="form" method="post" action="{{script_name}}?sid={{sid}}&c=pages&a=new">
+        <label for="page_zindex">Z-Index:</label><br><input type="number" min="0" name="page_zindex" id="page_zindex" rows="1" value="0"><br>
         <label for="page_name_id">URL Name ID:</label><br><textarea name="page_name_id" id="page_name_id" rows="1" cols="100"></textarea><br>
         <label for="page_name">Name:</label><br><textarea name="page_name" id="page_name" rows="1" cols="100"></textarea><br>
         <label for="page_tags">Tags:</label><br><textarea name="page_tags" id="page_tags" rows="1" cols="100"></textarea><br>
@@ -141,6 +142,7 @@
     {{#pages}}
     <form role="form" method="post" action="{{script_name}}?sid={{sid}}&c=pages&a=update">
 
+        <label for="page_zindex">Z-Index:</label><br><input type="number" min="0" name="page_zindex" id="page_zindex" rows="1" value="{{zindex}}"><br>
         <label for="page_name_id">URL Name ID:</label><br><textarea name="page_name_id" id="page_name_id" rows="1" cols="100">{{id_name}}</textarea><br>
         <label for="page_name">Name:</label><br><textarea name="page_name" id="page_name" rows="1" cols="100">{{name}}</textarea><br>
         <label for="page_tags">Tags:</label><br><textarea name="page_tags" id="page_tags" rows="1" cols="100">{{#tags}}{{.}}, {{/tags}}</textarea><br>

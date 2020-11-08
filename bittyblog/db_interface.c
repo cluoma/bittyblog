@@ -474,6 +474,8 @@ int db_pages_cb(sqlite3_stmt* st, void* a) {
             page->tags = NULL;
         }
 
+        COPY_SQLITE3_INT(page->zindex, st, 5);
+
         bb_vec_add(pages, page);
     }
     return 0;
@@ -792,8 +794,8 @@ int db_new_page(bb_page *p) {
     }
 
     // Add post to database
-    rc = execute_query(db, NULL, NULL, ADMIN_NEW_PAGE, "ssi",
-                p->id_name, p->name, p->style);
+    rc = execute_query(db, NULL, NULL, ADMIN_NEW_PAGE, "ssii",
+                p->id_name, p->name, p->style, p->zindex);
     if (!rc) {
         fprintf(stderr, "Failed to add page to database\n");
         sqlite3_close(db);
@@ -830,8 +832,8 @@ int db_update_page(bb_page *p) {
     }
 
     // Update post to database
-    rc = execute_query(db, NULL, NULL, ADMIN_UPDATE_PAGE, "ssii",
-                p->id_name, p->name, p->style, p->id);
+    rc = execute_query(db, NULL, NULL, ADMIN_UPDATE_PAGE, "ssiii",
+                p->id_name, p->name, p->style, p->zindex, p->id);
     if (!rc) {
         fprintf(stderr, "Failed to update page to database\n");
         sqlite3_close(db);

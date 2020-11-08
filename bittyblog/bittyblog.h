@@ -69,6 +69,7 @@ typedef struct {
 // Information on the type of webpage
 typedef struct {
     int id;
+    int zindex;
     char* id_name;
     char* name;
     int style;

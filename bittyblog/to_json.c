@@ -379,6 +379,7 @@ void bb_pages_to_json_admin(JSON_Object *root_object, bb_page_request *req, int 
                 }
                 json_object_set_value(json_value_get_object(tmp), "tags", json_array_get_wrapping_value(json_tags));
             }
+            json_object_set_number(json_value_get_object(tmp), "zindex", ((bb_page *)bb_vec_get(req->pages, i))->zindex);
 
             // Add arrary of Styles to page
             if (action == EDIT)

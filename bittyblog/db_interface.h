@@ -223,9 +223,9 @@ WHERE p.id = @ID"
 #define ADMIN_UPDATE_POST "UPDATE posts SET page_id = ?, user_id = ?, title = ?, time = ?, text = ?, markdown = ?, byline = ?, thumbnail = ?, visible = ? WHERE id = ?"
 #define ADMIN_DELETE_POST "DELETE FROM posts WHERE id = ?"
 
-#define ADMIN_NEW_PAGE "INSERT INTO pages (name_id, name, style) VALUES(?, ?, ?)"
+#define ADMIN_NEW_PAGE "INSERT INTO pages (name_id, name, style, zindex) VALUES(?, ?, ?, ?)"
 #define ADMIN_ROWID_LAST_PAGE "SELECT last_insert_rowid() FROM pages"
-#define ADMIN_UPDATE_PAGE "UPDATE pages SET name_id = ?, name = ?, style = ? WHERE id = ?"
+#define ADMIN_UPDATE_PAGE "UPDATE pages SET name_id = ?, name = ?, style = ?, zindex = ? WHERE id = ?"
 #define ADMIN_DELETE_PAGE "DELETE FROM pages WHERE id = ?"
 #define ADMIN_DELETE_PAGE_NULL_POSTS "UPDATE posts SET page_id = NULL WHERE page_id = ?"
 
@@ -237,13 +237,14 @@ WHERE p.id = @ID"
 /*
  * Queries for loading pages
  */
-#define LOAD_PAGES "SELECT id, name_id, name, style, tags FROM pages p \
+#define LOAD_PAGES "SELECT id, name_id, name, style, tags, zindex FROM pages p \
 LEFT JOIN (SELECT tr.page_id, group_concat(t.tag, ', ') `tags` \
 FROM tags t \
 INNER JOIN tags_pages_relate tr on (tr.tag_id = t.id) \
 GROUP BY page_id \
 ) t \
-ON p.id = t.page_id"
+ON p.id = t.page_id \
+ORDER BY p.zindex, p.id"
 
 /*
  * Queries for loading user data
