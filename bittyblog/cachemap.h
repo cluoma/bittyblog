@@ -41,7 +41,7 @@ typedef struct {
 
 bb_map *bb_map_init(unsigned long size, unsigned long long max_bytes, time_t timeout);
 int bb_map_free(bb_map *m);
-int bb_map_insert(bb_map **m, char *key, char *data, unsigned long datalen);
+int bb_map_insert(bb_map **m, const char *key, char *data, unsigned long datalen);
 int bb_map_remove(bb_map *m, const char *key);
 bb_map_node *bb_map_get(bb_map *m, const char *key);
 

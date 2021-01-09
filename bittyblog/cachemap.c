@@ -223,7 +223,7 @@ int bb_map_cleanup(bb_map *m)
     return BBMAP_OK;
 }
 
-int bb_map_insert(bb_map **m, char *key, char *data, unsigned long datalen)
+int bb_map_insert(bb_map **m, const char *key, char *data, unsigned long datalen)
 {
     // Check if we have enough data to add, if not try to purge old entries
     // then try again
